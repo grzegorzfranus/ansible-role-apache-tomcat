@@ -233,6 +233,34 @@
         fail_msg: "Systemd service file not found"
         success_msg: "Systemd service file verified"
 
+    # --- Systemd standard output/error redirection verification ---
+    - name: Verify | Read tomcat.service file
+      ansible.builtin.slurp:
+        src: "/etc/systemd/system/tomcat.service"
+      register: __verify_tomcat_service_content
+
+    - name: Verify | Assert tomcat.service redirects logging to catalina.out
+      ansible.builtin.assert:
+        that:
+          - "'StandardOutput=append:/var/log/tomcat/catalina.out' in (__verify_tomcat_service_content.content | b64decode)"
+          - "'StandardError=append:/var/log/tomcat/catalina.out' in (__verify_tomcat_service_content.content | b64decode)"
+        fail_msg: "tomcat.service does not redirect StandardOutput/StandardError to catalina.out"
+        success_msg: "tomcat.service standard output/error redirection verified"
+
+    # --- server.xml AccessLogValve rotatable="false" verification ---
+    - name: Verify | Read server.xml file
+      ansible.builtin.slurp:
+        src: "{{ tomcat_catalina_base }}/conf/server.xml"
+      register: __verify_server_xml_content
+
+    - name: Verify | Assert server.xml has AccessLogValve rotatable set to false
+      ansible.builtin.assert:
+        that:
+          - "'rotatable=\"false\"' in (__verify_server_xml_content.content | b64decode)"
+          - "'checkExists=\"true\"' in (__verify_server_xml_content.content | b64decode)"
+        fail_msg: "server.xml AccessLogValve rotatable is not false or checkExists is not true"
+        success_msg: "server.xml AccessLogValve rotatable=false verified"
+
     # --- Logrotate verification ---
     - name: Verify | Check logrotate configuration exists
       ansible.builtin.stat:
@@ -245,6 +273,23 @@
           - __verify_logrotate.stat.exists
         fail_msg: "Logrotate configuration not found"
         success_msg: "Logrotate configuration verified"
+
+    - name: Verify | Read logrotate configuration file
+      ansible.builtin.slurp:
+        src: "/etc/logrotate.d/tomcat"
+      register: __verify_logrotate_content
+      when: __verify_logrotate.stat.exists
+
+    - name: Verify | Assert logrotate configuration targets access_log.log and GC logs
+      ansible.builtin.assert:
+        that:
+          - "'/var/log/tomcat/access_log.log {' in (__verify_logrotate_content.content | b64decode)"
+          - "'copytruncate' in (__verify_logrotate_content.content | b64decode)"
+          - "'/var/log/tomcat/gc.log {' in (__verify_logrotate_content.content | b64decode)"
+          - "'/var/log/tomcat/gc.log.[0-9]* {' in (__verify_logrotate_content.content | b64decode)"
+        fail_msg: "Logrotate does not target expected log files or is missing GC log configurations"
+        success_msg: "Logrotate configuration for access_log.log and GC logs verified"
+      when: __verify_logrotate.stat.exists
 
     # --- Hardening verification ---
     - name: Verify | Check default apps removed from CATALINA_HOME

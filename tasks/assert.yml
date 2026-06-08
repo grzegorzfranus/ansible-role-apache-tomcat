@@ -426,6 +426,18 @@
     fail_msg: "Invalid systemd settings. service_name must be non-empty, limit_nofile must be positive, restart_sec must be >= 0."
     success_msg: "Systemd settings validated: service={{ tomcat_service_name }}, nofile={{ tomcat_systemd_limit_nofile }}"
 
+- name: Tomcat | assert | Validate systemd logging settings
+  ansible.builtin.assert:
+    that:
+      - tomcat_systemd_standard_output is defined
+      - tomcat_systemd_standard_output is string
+      - tomcat_systemd_standard_output | length > 0
+      - tomcat_systemd_standard_error is defined
+      - tomcat_systemd_standard_error is string
+      - tomcat_systemd_standard_error | length > 0
+    fail_msg: "tomcat_systemd_standard_output and tomcat_systemd_standard_error must be non-empty strings."
+    success_msg: "Systemd logging paths validated"
+
 # --- Section 13: Logrotate ---
 
 - name: Tomcat | assert | Validate logrotate toggle
@@ -453,6 +465,14 @@
     success_msg: "Logrotate settings validated: frequency={{ tomcat_logrotate_options.frequency }}, count={{ tomcat_logrotate_options.count }}"
   when:
     - tomcat_configure_logrotate | bool
+
+- name: Tomcat | assert | Validate access log rotatable settings
+  ansible.builtin.assert:
+    that:
+      - tomcat_access_log_rotatable is defined
+      - tomcat_access_log_rotatable | type_debug in ['bool', 'AnsibleUnsafeText', 'str']
+    fail_msg: "tomcat_access_log_rotatable must be a boolean."
+    success_msg: "Access log rotatable flag validated: {{ tomcat_access_log_rotatable }}"
 
 # --- Section 14: Upgrade ---
 

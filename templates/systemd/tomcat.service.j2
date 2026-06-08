@@ -55,8 +55,8 @@ Restart=on-failure
 RestartSec={{ tomcat_systemd_restart_sec }}
 
 # --- Logging ---
-StandardOutput=journal
-StandardError=journal
+StandardOutput={{ tomcat_systemd_standard_output }}
+StandardError={{ tomcat_systemd_standard_error }}
 SyslogIdentifier={{ tomcat_service_name }}
 
 [Install]

@@ -447,6 +447,16 @@ argument_specs:
         type: int
         default: 10
 
+      tomcat_systemd_standard_output:
+        description: "Destination for systemd standard output (stdout)"
+        type: str
+        default: "append:{{ tomcat_log_dir }}/catalina.out"
+
+      tomcat_systemd_standard_error:
+        description: "Destination for systemd standard error (stderr)"
+        type: str
+        default: "append:{{ tomcat_log_dir }}/catalina.out"
+
       # -----------------------------------------------------------------
       # 13. Logrotate
       # -----------------------------------------------------------------
@@ -454,6 +464,11 @@ argument_specs:
         description: "Configure logrotate for Tomcat logs"
         type: bool
         default: true
+
+      tomcat_access_log_rotatable:
+        description: "Whether Tomcat's AccessLogValve itself rotates the log file. When false, logrotate manages rotation."
+        type: bool
+        default: false
 
       tomcat_logrotate_options:
         description: "Logrotate configuration options"

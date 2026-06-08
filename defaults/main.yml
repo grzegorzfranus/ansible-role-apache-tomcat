@@ -351,6 +351,12 @@ tomcat_systemd_limit_nofile: 65536
 # Delay in seconds before restarting the service after a failure (RestartSec)
 tomcat_systemd_restart_sec: 10
 
+# Destination for systemd standard output (stdout)
+tomcat_systemd_standard_output: "append:{{ tomcat_log_dir }}/catalina.out"
+
+# Destination for systemd standard error (stderr)
+tomcat_systemd_standard_error: "append:{{ tomcat_log_dir }}/catalina.out"
+
 # -----------------------------------------------------------------------------
 # 13. Logrotate
 # -----------------------------------------------------------------------------
@@ -358,6 +364,10 @@ tomcat_systemd_restart_sec: 10
 
 # Whether to configure logrotate for Tomcat logs
 tomcat_configure_logrotate: true
+
+# Whether Tomcat's AccessLogValve itself rotates the log file.
+# When false, Tomcat writes to 'access_log.log' and logrotate handles rotation.
+tomcat_access_log_rotatable: false
 
 tomcat_logrotate_options:
   archive_directory_path: "/var/log/tomcat/archive"
