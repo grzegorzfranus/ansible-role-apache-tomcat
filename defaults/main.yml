@@ -23,6 +23,7 @@
 #   12. Systemd
 #   13. Logrotate
 #   14. Upgrade
+#   15. Logging
 # =============================================================================
 
 # -----------------------------------------------------------------------------
@@ -334,6 +335,13 @@ tomcat_unpack_wars: false
 # Disable automatic deployment scanning in the Host element of server.xml
 tomcat_auto_deploy: false
 
+# LockOutRealm brute-force protection settings (CIS Benchmark 5.2)
+# Number of consecutive failed authentication attempts before lockout
+tomcat_lockout_failure_count: 5
+
+# Lockout duration in seconds after exceeding failure count
+tomcat_lockout_time: 300
+
 # -----------------------------------------------------------------------------
 # 12. Systemd
 # -----------------------------------------------------------------------------
@@ -391,3 +399,24 @@ tomcat_cleanup_old_versions: true
 # Only applies when tomcat_cleanup_old_versions is true
 # The current version is always kept — this value controls how many OLD versions remain
 tomcat_keep_old_versions: 2
+
+# -----------------------------------------------------------------------------
+# 15. Logging
+# -----------------------------------------------------------------------------
+# Tomcat JULI internal logging configuration (CIS Benchmark 7.2)
+# Application-level logging should use SLF4J/Logback inside the WAR.
+
+# Whether to template a managed logging.properties file
+# When true, deploys a production-hardened logging.properties to CATALINA_BASE/conf/
+# When false, Tomcat uses the default logging.properties from CATALINA_HOME/conf/
+tomcat_configure_logging: true
+
+# Default log level for Tomcat internal components
+# Recommended: WARNING for production (reduces noise), INFO for debugging
+# Valid values: SEVERE, WARNING, INFO, CONFIG, FINE, FINER, FINEST
+tomcat_logging_level: "WARNING"
+
+# Number of days to keep rotated JULI log files before deletion
+# Set to 0 for unlimited retention (not recommended)
+# Should match tomcat_logrotate_options.count for consistency
+tomcat_logging_max_days: 14

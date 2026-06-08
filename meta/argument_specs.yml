@@ -424,6 +424,16 @@ argument_specs:
         type: bool
         default: false
 
+      tomcat_lockout_failure_count:
+        description: "Max consecutive failed authentication attempts before lockout (CIS 5.2)"
+        type: int
+        default: 5
+
+      tomcat_lockout_time:
+        description: "Lockout duration in seconds after exceeding failure count (CIS 5.2)"
+        type: int
+        default: 300
+
       # -----------------------------------------------------------------
       # 12. Systemd
       # -----------------------------------------------------------------
@@ -525,3 +535,29 @@ argument_specs:
         description: "Number of previous Tomcat versions to keep in installation directory (current version always kept)"
         type: int
         default: 2
+
+      # -----------------------------------------------------------------
+      # 15. Logging
+      # -----------------------------------------------------------------
+      tomcat_configure_logging:
+        description: "Template a managed logging.properties into CATALINA_BASE/conf/ (CIS 7.2)"
+        type: bool
+        default: true
+
+      tomcat_logging_level:
+        description: "Default log level for Tomcat internal components"
+        type: str
+        default: "WARNING"
+        choices:
+          - SEVERE
+          - WARNING
+          - INFO
+          - CONFIG
+          - FINE
+          - FINER
+          - FINEST
+
+      tomcat_logging_max_days:
+        description: "Days to keep rotated JULI log files before deletion (0 = unlimited)"
+        type: int
+        default: 14

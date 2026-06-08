@@ -25,6 +25,17 @@ CATALINA_OPTS="${CATALINA_OPTS} -Djava.awt.headless=true"
 CATALINA_OPTS="${CATALINA_OPTS} -Djava.security.egd=file:/dev/urandom"
 CATALINA_OPTS="${CATALINA_OPTS} -Dfile.encoding=UTF-8"
 
+{% if tomcat_enable_hardening | bool %}
+# --- CIS Tomcat Benchmark: Security system properties ---
+# CIS 10.3: Prevent request object reuse between requests (info leakage)
+CATALINA_OPTS="${CATALINA_OPTS} -Dorg.apache.catalina.connector.RECYCLE_FACADES=true"
+# CIS 10.4: Enforce strict Servlet specification compliance
+CATALINA_OPTS="${CATALINA_OPTS} -Dorg.apache.catalina.STRICT_SERVLET_COMPLIANCE=true"
+# CIS 10.5: Block path traversal via backslash and encoded slashes
+CATALINA_OPTS="${CATALINA_OPTS} -Dorg.apache.catalina.connector.CoyoteAdapter.ALLOW_BACKSLASH=false"
+CATALINA_OPTS="${CATALINA_OPTS} -Dorg.apache.tomcat.util.buf.UDecoder.ALLOW_ENCODED_SLASH=false"
+{% endif %}
+
 {% if tomcat_java_opts_extra | default('') | length > 0 %}
 # --- User-defined extra options ---
 CATALINA_OPTS="${CATALINA_OPTS} {{ tomcat_java_opts_extra }}"
