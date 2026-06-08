@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.2](https://github.com/grzegorzfranus/ansible-role-apache-tomcat/compare/v0.2.1...v0.2.2) (2026-06-08)
+
+
+### Code Refactoring
+
+* enable version cleanup by default and keep 2 versions ([#5](https://github.com/grzegorzfranus/ansible-role-apache-tomcat/issues/5)) ([6f5190c](https://github.com/grzegorzfranus/ansible-role-apache-tomcat/commit/6f5190c91a79f8f979079c87654768fd9aed0de0))
+
 ## [0.2.1](https://github.com/grzegorzfranus/ansible-role-apache-tomcat/compare/v0.2.0...v0.2.1) (2026-06-08)
 
 
