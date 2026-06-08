@@ -1,0 +1,74 @@
+#jinja2: trim_blocks: True, lstrip_blocks: True
+{{ ansible_managed | comment }}
+
+# Log rotation for catalina.out (stdout/stderr of the JVM process).
+# Access logs (access_log.*.log) are self-rotating via AccessLogValve and
+# only need periodic cleanup of old dated files.
+
+{{ tomcat_log_dir }}/catalina.out {
+    su {{ tomcat_user }} {{ tomcat_group }}
+    {{ tomcat_logrotate_options.frequency }}
+    rotate {{ tomcat_logrotate_options.count }}
+    {% if tomcat_logrotate_options.missingok %}
+    missingok
+    {% endif %}
+    {% if tomcat_logrotate_options.compress %}
+    compress
+    {% endif %}
+    {% if tomcat_logrotate_options.nocreate %}
+    nocreate
+    {% endif %}
+    {% if tomcat_logrotate_options.copytruncate %}
+    copytruncate
+    {% endif %}
+    {% if tomcat_logrotate_options.dateext %}
+    dateext
+    dateformat .%Y-%m-%d
+    {% endif %}
+    {% if tomcat_logrotate_options.archive_directory_path is defined and tomcat_logrotate_options.archive_directory_path | length > 0 %}
+    olddir {{ tomcat_logrotate_options.archive_directory_path }}
+    {% endif %}
+}
+
+# Archive old access logs (self-rotated by AccessLogValve)
+# AccessLogValve creates dated files automatically. Logrotate moves them
+# to olddir and compresses them. No custom tar scripts needed.
+{{ tomcat_log_dir }}/access_log.*.log {
+    su {{ tomcat_user }} {{ tomcat_group }}
+    {{ tomcat_logrotate_options.frequency }}
+    rotate {{ tomcat_logrotate_options.count }}
+    missingok
+    nocreate
+    {% if tomcat_logrotate_options.compress %}
+    compress
+    {% endif %}
+    {% if tomcat_logrotate_options.dateext %}
+    dateext
+    dateformat .%Y-%m-%d
+    {% endif %}
+    {% if tomcat_logrotate_options.archive_directory_path is defined and tomcat_logrotate_options.archive_directory_path | length > 0 %}
+    olddir {{ tomcat_logrotate_options.archive_directory_path }}
+    {% endif %}
+}
+
+{% if tomcat_enable_gc_logging | bool %}
+# GC log rotation (JVM keeps FD open, requires copytruncate)
+{{ tomcat_log_dir }}/gc.log {
+    su {{ tomcat_user }} {{ tomcat_group }}
+    {{ tomcat_logrotate_options.frequency }}
+    rotate {{ tomcat_logrotate_options.count }}
+    missingok
+    {% if tomcat_logrotate_options.compress %}
+    compress
+    {% endif %}
+    nocreate
+    copytruncate
+    {% if tomcat_logrotate_options.dateext %}
+    dateext
+    dateformat .%Y-%m-%d
+    {% endif %}
+    {% if tomcat_logrotate_options.archive_directory_path is defined and tomcat_logrotate_options.archive_directory_path | length > 0 %}
+    olddir {{ tomcat_logrotate_options.archive_directory_path }}
+    {% endif %}
+}
+{% endif %}

@@ -1,0 +1,42 @@
+---
+# Apache Tomcat Molecule — Converge for cicd scenario.
+
+- name: Molecule | Converge
+  hosts: all
+
+  pre_tasks:
+    - name: Converge | Wait for systemd to complete initialization
+      ansible.builtin.systemd:
+        name: multi-user.target
+        state: started
+      register: systemctl_status
+      until: true
+      retries: 30
+      delay: 5
+      when:
+        - ansible_facts['service_mgr'] == 'systemd'
+      changed_when: false
+      failed_when: false
+
+    - name: Converge | Read test public key
+      ansible.builtin.slurp:
+        src: /tmp/test_deploy_key.pub
+      register: __converge_test_ssh_key
+
+  vars:
+    tomcat_enable_hardening: true
+    tomcat_enable_cicd: true
+    tomcat_deployer_user: "deployer"
+    tomcat_deployer_uid: 901
+    tomcat_deployer_ssh_keys:
+      - "{{ (__converge_test_ssh_key.content | b64decode | trim) }}"
+    tomcat_enable_jmx: false
+    tomcat_ssl_generate_self_signed: true
+
+  roles:
+    - role: ../../..
+
+  post_tasks:
+    - name: Converge | Display role execution summary
+      ansible.builtin.debug:
+        msg: "Apache Tomcat CI/CD scenario execution completed"

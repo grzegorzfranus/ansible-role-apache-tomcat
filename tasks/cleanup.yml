@@ -1,0 +1,36 @@
+---
+# =============================================================================
+# Ansible Role: Apache Tomcat - Tasks: Cleanup
+# =============================================================================
+# Removes old Tomcat versions from the installation directory, keeping the
+# current version and a configurable number of previous versions for rollback.
+# =============================================================================
+
+- name: Tomcat | cleanup | Find all Tomcat version directories
+  ansible.builtin.find:
+    paths: "{{ tomcat_install_dir }}"
+    patterns: "apache-tomcat-*"
+    file_type: directory
+    recurse: false
+  register: __tomcat_version_dirs
+
+- name: Tomcat | cleanup | Build sorted list of old versions (excluding current)
+  ansible.builtin.set_fact:
+    __tomcat_old_versions: >-
+      {{ __tomcat_version_dirs.files
+         | map(attribute='path')
+         | reject('equalto', tomcat_catalina_home)
+         | sort
+         | reverse
+         | list }}
+
+- name: Tomcat | cleanup | Remove old Tomcat versions (keep {{ tomcat_keep_old_versions }})
+  become: true
+  ansible.builtin.file:
+    path: "{{ item }}"
+    state: absent
+  loop: "{{ __tomcat_old_versions[tomcat_keep_old_versions | int :] }}"
+  loop_control:
+    label: "{{ item | basename }}"
+  when:
+    - __tomcat_old_versions | length > (tomcat_keep_old_versions | int)

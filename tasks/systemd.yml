@@ -1,0 +1,27 @@
+---
+# =============================================================================
+# Ansible Role: Apache Tomcat - Tasks: Systemd
+# =============================================================================
+# Templates the systemd service unit with kernel-level hardening and
+# enables/starts the Tomcat service.
+# =============================================================================
+
+- name: Tomcat | systemd | Template systemd service unit
+  become: true
+  ansible.builtin.template:
+    src: systemd/tomcat.service.j2
+    dest: "/etc/systemd/system/{{ tomcat_service_name }}.service"
+    owner: root
+    group: root
+    mode: "0644"
+  notify:
+    - Tomcat | handlers | Reload systemd
+    - Tomcat | handlers | Restart Tomcat service
+
+- name: Tomcat | systemd | Enable and start Tomcat service
+  become: true
+  ansible.builtin.systemd:
+    name: "{{ tomcat_service_name }}"
+    enabled: "{{ tomcat_service_enabled }}"
+    state: started
+    daemon_reload: true

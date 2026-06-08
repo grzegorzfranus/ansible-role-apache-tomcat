@@ -1,0 +1,34 @@
+---
+galaxy_info:
+  role_name: apache_tomcat
+  author: Grzegorz Franus
+  namespace: grzegorzfranus
+  description: >
+    Ansible role for deploying Apache Tomcat using the Enterprise Split Tomcat architecture
+    (CATALINA_HOME/CATALINA_BASE separation). Features hardened systemd service, HTTPS with PKCS12
+    keystore, optional CI/CD deployer user, JMX monitoring, and comprehensive security hardening.
+  license: Apache-2.0
+  company: EWARE
+  min_ansible_version: "2.16"
+
+  platforms:
+    - name: EL
+      versions:
+        - "9"
+
+  galaxy_tags:
+    - tomcat
+    - java
+    - web
+    - applicationserver
+    - security
+    - hardening
+    - ssl
+    - systemd
+    - cicd
+    - jmx
+
+dependencies: []
+
+collections:
+  - community.crypto

@@ -1,0 +1,17 @@
+#jinja2: trim_blocks: True, lstrip_blocks: True
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  {{ ansible_managed }}
+
+  =============================================================================
+  Apache Tomcat {{ tomcat_version }} - User Database
+  =============================================================================
+  No users are defined by default for security. Override this file or use
+  an external authentication realm (LDAP, SSO) in production environments.
+  =============================================================================
+-->
+<tomcat-users xmlns="http://tomcat.apache.org/xml"
+              xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+              xsi:schemaLocation="http://tomcat.apache.org/xml tomcat-users.xsd"
+              version="1.0">
+</tomcat-users>

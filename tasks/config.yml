@@ -1,0 +1,249 @@
+---
+# =============================================================================
+# Ansible Role: Apache Tomcat - Tasks: Config
+# =============================================================================
+# Templates configuration files, manages keystore (custom copy or self-signed
+# generation), configures JMX security files, and performs hardening.
+# =============================================================================
+
+# --- Core configuration templates ---
+
+- name: Tomcat | config | Template server.xml
+  become: true
+  ansible.builtin.template:
+    src: tomcat/server.xml.j2
+    dest: "{{ tomcat_catalina_base }}/conf/server.xml"
+    owner: root
+    group: "{{ tomcat_group }}"
+    mode: "0640"
+  notify:
+    - Tomcat | handlers | Restart Tomcat service
+
+- name: Tomcat | config | Template web.xml
+  become: true
+  ansible.builtin.template:
+    src: tomcat/web.xml.j2
+    dest: "{{ tomcat_catalina_base }}/conf/web.xml"
+    owner: root
+    group: "{{ tomcat_group }}"
+    mode: "0640"
+  notify:
+    - Tomcat | handlers | Restart Tomcat service
+
+- name: Tomcat | config | Ensure rewrite config directory exists
+  become: true
+  ansible.builtin.file:
+    path: "{{ tomcat_catalina_base }}/conf/Catalina/localhost"
+    state: directory
+    owner: "{{ tomcat_user }}"
+    group: "{{ tomcat_group }}"
+    mode: "0750"
+  when:
+    - (tomcat_enable_hardening | bool) or
+      (tomcat_enable_ssl | bool and tomcat_force_https | default(true) | bool and tomcat_enable_http | bool)
+
+- name: Tomcat | config | Template rewrite.config (method blocking / force HTTPS)
+  become: true
+  ansible.builtin.template:
+    src: tomcat/rewrite.config.j2
+    dest: "{{ tomcat_catalina_base }}/conf/Catalina/localhost/rewrite.config"
+    owner: root
+    group: "{{ tomcat_group }}"
+    mode: "0640"
+  when:
+    - (tomcat_enable_hardening | bool) or
+      (tomcat_enable_ssl | bool and tomcat_force_https | default(true) | bool and tomcat_enable_http | bool)
+  notify:
+    - Tomcat | handlers | Restart Tomcat service
+
+- name: Tomcat | config | Template setenv.sh
+  become: true
+  ansible.builtin.template:
+    src: tomcat/setenv.sh.j2
+    dest: "{{ tomcat_catalina_base }}/bin/setenv.sh"
+    owner: root
+    group: "{{ tomcat_group }}"
+    mode: "0750"
+  notify:
+    - Tomcat | handlers | Restart Tomcat service
+
+- name: Tomcat | config | Template tomcat-users.xml
+  become: true
+  ansible.builtin.template:
+    src: tomcat/tomcat-users.xml.j2
+    dest: "{{ tomcat_catalina_base }}/conf/tomcat-users.xml"
+    owner: root
+    group: "{{ tomcat_group }}"
+    mode: "0640"
+  notify:
+    - Tomcat | handlers | Restart Tomcat service
+
+# --- SSL Keystore management ---
+
+- name: Tomcat | config | Copy custom keystore from control node
+  become: true
+  ansible.builtin.copy:
+    src: "{{ tomcat_ssl_keystore_src }}"
+    dest: "{{ tomcat_ssl_keystore_file }}"
+    owner: root
+    group: "{{ tomcat_group }}"
+    mode: "0640"
+  when:
+    - tomcat_enable_ssl | bool
+    - tomcat_ssl_keystore_src | default('') | length > 0
+  notify:
+    - Tomcat | handlers | Restart Tomcat service
+
+- name: Tomcat | config | Check if self-signed keystore exists
+  become: true
+  ansible.builtin.stat:
+    path: "{{ tomcat_ssl_keystore_file }}"
+  register: __tomcat_keystore_check
+  when:
+    - tomcat_enable_ssl | bool
+    - tomcat_ssl_keystore_src | default('') | length == 0
+    - tomcat_ssl_generate_self_signed | bool
+
+- name: Tomcat | config | Ensure python3-cryptography is installed
+  become: true
+  ansible.builtin.dnf:
+    name: python3-cryptography
+    state: present
+  when:
+    - tomcat_enable_ssl | bool
+    - tomcat_ssl_keystore_src | default('') | length == 0
+    - tomcat_ssl_generate_self_signed | bool
+    - not (__tomcat_keystore_check.stat.exists | default(false))
+
+- name: Tomcat | config | Generate self-signed private key
+  become: true
+  community.crypto.openssl_privatekey:
+    path: "{{ __tomcat_ssl_private_key_path }}"
+    type: RSA
+    size: 2048
+    owner: root
+    group: "{{ tomcat_group }}"
+    mode: "0640"
+  when:
+    - tomcat_enable_ssl | bool
+    - tomcat_ssl_keystore_src | default('') | length == 0
+    - tomcat_ssl_generate_self_signed | bool
+    - not (__tomcat_keystore_check.stat.exists | default(false))
+
+- name: Tomcat | config | Generate self-signed CSR
+  become: true
+  community.crypto.openssl_csr:
+    path: "{{ __tomcat_ssl_csr_path }}"
+    privatekey_path: "{{ __tomcat_ssl_private_key_path }}"
+    common_name: "{{ tomcat_ssl_self_signed_dname | regex_search('CN=([^,]+)', '\\1') | first }}"
+    organizational_unit_name: "{{ tomcat_ssl_self_signed_dname | regex_search('OU=([^,]+)', '\\1') | first }}"
+    organization_name: "{{ tomcat_ssl_self_signed_dname | regex_search('O=([^,]+)', '\\1') | first }}"
+    locality_name: "{{ tomcat_ssl_self_signed_dname | regex_search('L=([^,]+)', '\\1') | first }}"
+    state_or_province_name: "{{ tomcat_ssl_self_signed_dname | regex_search('ST=([^,]+)', '\\1') | first }}"
+    country_name: "{{ tomcat_ssl_self_signed_dname | regex_search('C=([^,]+)', '\\1') | first }}"
+    owner: root
+    group: "{{ tomcat_group }}"
+    mode: "0640"
+  when:
+    - tomcat_enable_ssl | bool
+    - tomcat_ssl_keystore_src | default('') | length == 0
+    - tomcat_ssl_generate_self_signed | bool
+    - not (__tomcat_keystore_check.stat.exists | default(false))
+
+- name: Tomcat | config | Generate self-signed certificate
+  become: true
+  community.crypto.x509_certificate:
+    path: "{{ __tomcat_ssl_certificate_path }}"
+    privatekey_path: "{{ __tomcat_ssl_private_key_path }}"
+    csr_path: "{{ __tomcat_ssl_csr_path }}"
+    provider: selfsigned
+    selfsigned_not_after: "+{{ tomcat_ssl_self_signed_validity }}d"
+    owner: root
+    group: "{{ tomcat_group }}"
+    mode: "0640"
+  when:
+    - tomcat_enable_ssl | bool
+    - tomcat_ssl_keystore_src | default('') | length == 0
+    - tomcat_ssl_generate_self_signed | bool
+    - not (__tomcat_keystore_check.stat.exists | default(false))
+
+- name: Tomcat | config | Generate PKCS12 keystore from certificate
+  become: true
+  community.crypto.openssl_pkcs12:
+    path: "{{ tomcat_ssl_keystore_file }}"
+    certificate_path: "{{ __tomcat_ssl_certificate_path }}"
+    privatekey_path: "{{ __tomcat_ssl_private_key_path }}"
+    friendly_name: "{{ tomcat_ssl_key_alias }}"
+    passphrase: "{{ tomcat_ssl_keystore_password }}"
+    action: export
+    state: present
+    owner: root
+    group: "{{ tomcat_group }}"
+    mode: "0640"
+  when:
+    - tomcat_enable_ssl | bool
+    - tomcat_ssl_keystore_src | default('') | length == 0
+    - tomcat_ssl_generate_self_signed | bool
+    - not (__tomcat_keystore_check.stat.exists | default(false))
+  no_log: true
+  notify:
+    - Tomcat | handlers | Restart Tomcat service
+
+- name: Tomcat | config | Remove temporary SSL generation files (defense-in-depth)
+  become: true
+  ansible.builtin.file:
+    path: "{{ item }}"
+    state: absent
+  loop:
+    - "{{ __tomcat_ssl_private_key_path }}"
+    - "{{ __tomcat_ssl_certificate_path }}"
+    - "{{ __tomcat_ssl_csr_path }}"
+  when:
+    - tomcat_enable_ssl | bool
+    - tomcat_ssl_keystore_src | default('') | length == 0
+    - tomcat_ssl_generate_self_signed | bool
+    - not (__tomcat_keystore_check.stat.exists | default(false))
+  no_log: true
+
+# --- JMX security files ---
+
+- name: Tomcat | config | Template JMX access file
+  become: true
+  ansible.builtin.template:
+    src: jmx/jmxremote.access.j2
+    dest: "{{ tomcat_jmx_access_file }}"
+    owner: "{{ tomcat_user }}"
+    group: "{{ tomcat_group }}"
+    mode: "0400"
+  when:
+    - tomcat_enable_jmx | bool
+  no_log: true
+  notify:
+    - Tomcat | handlers | Restart Tomcat service
+
+- name: Tomcat | config | Template JMX password file
+  become: true
+  ansible.builtin.template:
+    src: jmx/jmxremote.password.j2
+    dest: "{{ tomcat_jmx_password_file }}"
+    owner: "{{ tomcat_user }}"
+    group: "{{ tomcat_group }}"
+    mode: "0400"
+  when:
+    - tomcat_enable_jmx | bool
+  no_log: true
+  notify:
+    - Tomcat | handlers | Restart Tomcat service
+
+# --- Hardening: remove default applications ---
+
+- name: Tomcat | config | Remove default Tomcat applications (defense-in-depth)
+  become: true
+  ansible.builtin.file:
+    path: "{{ item.0 }}/webapps/{{ item.1 }}"
+    state: absent
+  loop: "{{ [tomcat_catalina_home, tomcat_catalina_base] | product(tomcat_default_apps_to_remove) | list }}"
+  loop_control:
+    label: "{{ item.0 | basename }}/webapps/{{ item.1 }}"
+  when:
+    - tomcat_enable_hardening | bool

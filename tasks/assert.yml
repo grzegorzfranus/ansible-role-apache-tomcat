@@ -1,0 +1,471 @@
+---
+# =============================================================================
+# Ansible Role: Apache Tomcat - Tasks: Assert
+# =============================================================================
+# Validates all role variables from defaults/main.yml for type, range, and
+# pattern correctness. Ensures the target OS is supported (EL9 only).
+# =============================================================================
+
+# --- OS validation ---
+
+- name: Tomcat | assert | Check if OS is supported
+  ansible.builtin.assert:
+    that:
+      - ansible_facts['os_family'] == 'RedHat'
+      - ansible_facts['distribution_major_version'] == '9'
+    fail_msg: "This role only supports EL9 (RHEL 9, Rocky Linux 9, AlmaLinux 9). Detected: {{ ansible_facts['distribution'] }} {{ ansible_facts['distribution_version'] }}"
+    success_msg: "Running on supported OS: {{ ansible_facts['distribution'] }} {{ ansible_facts['distribution_version'] }}"
+
+# --- Section 1: General Settings ---
+
+- name: Tomcat | assert | Validate general settings
+  ansible.builtin.assert:
+    that:
+      - tomcat_version is defined
+      - tomcat_version is string
+      - tomcat_version | length > 0
+      - tomcat_version is match('^[0-9]+\.[0-9]+\.[0-9]+$')
+      - tomcat_major_version is defined
+      - tomcat_major_version is string
+      - tomcat_major_version | length > 0
+      - tomcat_version is match('^' ~ tomcat_major_version ~ '\\.')
+    fail_msg: >-
+      Invalid general settings. tomcat_version must match X.Y.Z pattern,
+      tomcat_major_version must be a non-empty string, and
+      tomcat_version must start with tomcat_major_version.
+    success_msg: "General settings validated: Tomcat {{ tomcat_version }}"
+
+# --- Section 2: Users & Groups ---
+
+- name: Tomcat | assert | Validate users and groups
+  ansible.builtin.assert:
+    that:
+      - tomcat_user is defined
+      - tomcat_user is string
+      - tomcat_user | length > 0
+      - tomcat_group is defined
+      - tomcat_group is string
+      - tomcat_group | length > 0
+      - tomcat_uid is defined
+      - tomcat_uid | int > 0
+      - tomcat_gid is defined
+      - tomcat_gid | int > 0
+    fail_msg: "Invalid user/group settings. User and group must be non-empty strings, UID/GID must be positive integers."
+    success_msg: "Users and groups validated: {{ tomcat_user }}:{{ tomcat_group }} ({{ tomcat_uid }}:{{ tomcat_gid }})"
+
+# --- Section 3: CI/CD Deployer ---
+
+- name: Tomcat | assert | Validate CI/CD deployer settings
+  ansible.builtin.assert:
+    that:
+      - tomcat_enable_cicd is defined
+      - tomcat_enable_cicd | type_debug in ['bool', 'AnsibleUnsafeText', 'str']
+    fail_msg: "tomcat_enable_cicd must be a boolean value."
+    success_msg: "CI/CD toggle validated: {{ tomcat_enable_cicd }}"
+
+- name: Tomcat | assert | Validate CI/CD deployer details
+  ansible.builtin.assert:
+    that:
+      - tomcat_deployer_user is defined
+      - tomcat_deployer_user is string
+      - tomcat_deployer_user | length > 0
+      - tomcat_deployer_uid is defined
+      - tomcat_deployer_uid | int > 0
+      - tomcat_deployer_ssh_keys is defined
+      - tomcat_deployer_ssh_keys is iterable
+      - tomcat_deployer_sudoers_filename is defined
+      - tomcat_deployer_sudoers_filename is string
+      - tomcat_deployer_sudoers_filename | length > 0
+    fail_msg: "Invalid CI/CD deployer settings. deployer_user must be a non-empty string, deployer_uid must be a positive integer, ssh_keys must be a list."
+    success_msg: "CI/CD deployer validated: {{ tomcat_deployer_user }} (UID: {{ tomcat_deployer_uid }})"
+  when:
+    - tomcat_enable_cicd | bool
+
+# --- Section 4: Paths ---
+
+- name: Tomcat | assert | Validate path settings
+  ansible.builtin.assert:
+    that:
+      - tomcat_install_dir is defined
+      - tomcat_install_dir is string
+      - tomcat_install_dir is match('^/')
+      - tomcat_catalina_home is defined
+      - tomcat_catalina_home is string
+      - tomcat_catalina_home is match('^/')
+      - tomcat_symlink_path is defined
+      - tomcat_symlink_path is string
+      - tomcat_symlink_path is match('^/')
+      - tomcat_catalina_base is defined
+      - tomcat_catalina_base is string
+      - tomcat_catalina_base is match('^/')
+      - tomcat_log_dir is defined
+      - tomcat_log_dir is string
+      - tomcat_log_dir is match('^/')
+    fail_msg: "Invalid path settings. All paths must be absolute (start with '/')."
+    success_msg: "Paths validated: install_dir={{ tomcat_install_dir }}, base={{ tomcat_catalina_base }}, log_dir={{ tomcat_log_dir }}"
+
+# --- Section 5: Download ---
+
+- name: Tomcat | assert | Validate download settings
+  ansible.builtin.assert:
+    that:
+      - tomcat_custom_download_url is defined
+      - tomcat_download_checksum is defined
+      - tomcat_download_timeout is defined
+      - tomcat_download_timeout | int > 0
+      - tomcat_download_tmp_dir is defined
+      - tomcat_download_tmp_dir is string
+      - tomcat_download_tmp_dir is match('^/')
+    fail_msg: "Invalid download settings. Timeout must be a positive integer, tmp_dir must be an absolute path."
+    success_msg: "Download settings validated: timeout={{ tomcat_download_timeout }}s"
+
+# --- Section 6: Java ---
+# JAVA_HOME validation moved to tasks/java_detect.yml (supports auto-detection)
+
+
+# --- Section 7: JVM & CATALINA_OPTS ---
+
+- name: Tomcat | assert | Validate JVM settings
+  ansible.builtin.assert:
+    that:
+      - tomcat_jvm_heap_min is defined
+      - tomcat_jvm_heap_min is string
+      - tomcat_jvm_heap_min is match('^[0-9]+[mgMG]$')
+      - tomcat_jvm_heap_max is defined
+      - tomcat_jvm_heap_max is string
+      - tomcat_jvm_heap_max is match('^[0-9]+[mgMG]$')
+      - tomcat_jvm_metaspace_max is defined
+      - tomcat_jvm_metaspace_max is string
+      - tomcat_jvm_metaspace_max is match('^[0-9]+[mgMG]$')
+      - tomcat_java_opts_extra is defined
+      - tomcat_java_opts_extra is string
+    fail_msg: "Invalid JVM settings. Heap and metaspace values must match pattern '<digits>m' or '<digits>g'."
+    success_msg: "JVM settings validated: heap={{ tomcat_jvm_heap_min }}/{{ tomcat_jvm_heap_max }}, metaspace={{ tomcat_jvm_metaspace_max }}"
+
+- name: Tomcat | assert | Validate GC logging settings
+  ansible.builtin.assert:
+    that:
+      - tomcat_enable_gc_logging is defined
+      - tomcat_enable_gc_logging | type_debug in ['bool', 'AnsibleUnsafeText', 'str']
+      - tomcat_gc_log_opts is defined
+      - tomcat_gc_log_opts is string
+      - tomcat_gc_log_opts | length > 0 or not (tomcat_enable_gc_logging | bool)
+    fail_msg: "Invalid GC logging settings. tomcat_enable_gc_logging must be boolean. tomcat_gc_log_opts must be defined when GC logging is enabled."
+    success_msg: "GC logging settings validated: enabled={{ tomcat_enable_gc_logging }}"
+
+# --- Section 8: Network & SSL ---
+
+- name: Tomcat | assert | Validate SSL toggle
+  ansible.builtin.assert:
+    that:
+      - tomcat_enable_ssl is defined
+      - tomcat_enable_ssl | type_debug in ['bool', 'AnsibleUnsafeText', 'str']
+    fail_msg: "tomcat_enable_ssl must be a boolean value."
+    success_msg: "SSL toggle validated: {{ tomcat_enable_ssl }}"
+
+- name: Tomcat | assert | Validate at least one connector is enabled
+  ansible.builtin.assert:
+    that:
+      - (tomcat_enable_ssl | bool) or (tomcat_enable_http | bool) or (tomcat_enable_ajp | bool)
+    fail_msg: >-
+      No connectors enabled. At least one of tomcat_enable_ssl,
+      tomcat_enable_http, or tomcat_enable_ajp must be true.
+    success_msg: "Connector check passed"
+
+- name: Tomcat | assert | Validate network settings
+  ansible.builtin.assert:
+    that:
+      - tomcat_https_port is defined
+      - tomcat_https_port | int >= 1
+      - tomcat_https_port | int <= 65535
+      - tomcat_shutdown_port is defined
+      - tomcat_shutdown_port | int >= -1
+      - tomcat_shutdown_port | int <= 65535
+      - tomcat_enable_http is defined
+      - tomcat_enable_ajp is defined
+      - tomcat_server_header is defined
+      - tomcat_server_header is string
+      - tomcat_server_header | length > 0
+      - tomcat_connector_max_threads is defined
+      - tomcat_connector_max_threads | int >= 1
+      - tomcat_connector_connection_timeout is defined
+      - tomcat_connector_connection_timeout | int >= 1000
+      - tomcat_connector_enable_lookups is defined
+      - tomcat_connector_uri_encoding is defined
+      - tomcat_connector_uri_encoding is string
+      - tomcat_connector_uri_encoding | length > 0
+      - tomcat_deploy_on_startup is defined
+    fail_msg: "Invalid network settings. Ports must be in range 1-65535 (shutdown_port allows -1). maxThreads >= 1, connectionTimeout >= 1000ms."
+    success_msg: "Network settings validated: https={{ tomcat_https_port }}, shutdown={{ tomcat_shutdown_port }}, maxThreads={{ tomcat_connector_max_threads }}"
+
+- name: Tomcat | assert | Validate HTTP port
+  ansible.builtin.assert:
+    that:
+      - tomcat_http_port is defined
+      - tomcat_http_port | int >= 1
+      - tomcat_http_port | int <= 65535
+    fail_msg: "Invalid HTTP port. Must be in range 1-65535."
+    success_msg: "HTTP port validated: {{ tomcat_http_port }}"
+  when:
+    - tomcat_enable_http | bool
+
+- name: Tomcat | assert | Validate HTTP listen address
+  ansible.builtin.assert:
+    that:
+      - tomcat_http_address is defined
+      - tomcat_http_address is string
+      - tomcat_http_address | length > 0
+    fail_msg: "tomcat_http_address must be a non-empty string (e.g. '0.0.0.0' or '127.0.0.1')."
+    success_msg: "HTTP listen address validated: {{ tomcat_http_address }}"
+  when:
+    - tomcat_enable_http | bool
+
+- name: Tomcat | assert | Validate AJP port
+  ansible.builtin.assert:
+    that:
+      - tomcat_ajp_port is defined
+      - tomcat_ajp_port | int >= 1
+      - tomcat_ajp_port | int <= 65535
+    fail_msg: "Invalid AJP port. Must be in range 1-65535."
+    success_msg: "AJP port validated: {{ tomcat_ajp_port }}"
+  when:
+    - tomcat_enable_ajp | bool
+
+- name: Tomcat | assert | Validate AJP listen address
+  ansible.builtin.assert:
+    that:
+      - tomcat_ajp_address is defined
+      - tomcat_ajp_address is string
+      - tomcat_ajp_address | length > 0
+    fail_msg: "tomcat_ajp_address must be a non-empty string."
+    success_msg: "AJP listen address validated: {{ tomcat_ajp_address }}"
+  when:
+    - tomcat_enable_ajp | bool
+
+- name: Tomcat | assert | Validate HTTPS listen address
+  ansible.builtin.assert:
+    that:
+      - tomcat_https_address is defined
+      - tomcat_https_address is string
+      - tomcat_https_address | length > 0
+    fail_msg: "tomcat_https_address must be a non-empty string."
+    success_msg: "HTTPS listen address validated: {{ tomcat_https_address }}"
+  when:
+    - tomcat_enable_ssl | bool
+
+- name: Tomcat | assert | Validate AJP secret
+  ansible.builtin.assert:
+    that:
+      - tomcat_ajp_secret is defined
+      - tomcat_ajp_secret is string
+      - tomcat_ajp_secret | length > 0
+    fail_msg: >-
+      AJP secret is required when tomcat_ajp_secret_required is true.
+      Set tomcat_ajp_secret or set tomcat_ajp_secret_required: false.
+    success_msg: "AJP secret validated"
+  when:
+    - tomcat_enable_ajp | bool
+    - tomcat_ajp_secret_required | bool
+
+- name: Tomcat | assert | Validate forced HTTPS settings
+  ansible.builtin.assert:
+    that:
+      - tomcat_force_https is defined
+      - tomcat_force_https | type_debug in ['bool', 'AnsibleUnsafeText', 'str']
+    fail_msg: "tomcat_force_https must be a boolean value."
+    success_msg: "Forced HTTPS validated: {{ tomcat_force_https }}"
+
+- name: Tomcat | assert | Validate reverse proxy settings
+  ansible.builtin.assert:
+    that:
+      - tomcat_proxy_internal_proxies is defined
+      - tomcat_proxy_internal_proxies is string
+      - tomcat_proxy_internal_proxies | length > 0
+      - tomcat_proxy_remote_ip_header is defined
+      - tomcat_proxy_remote_ip_header is string
+      - tomcat_proxy_remote_ip_header | length > 0
+      - tomcat_proxy_protocol_header is defined
+      - tomcat_proxy_protocol_header is string
+      - tomcat_proxy_protocol_header | length > 0
+    fail_msg: >-
+      Invalid reverse proxy settings. All proxy headers and internalProxies
+      regex must be non-empty strings.
+    success_msg: >-
+      Reverse proxy settings validated:
+      remoteIpHeader={{ tomcat_proxy_remote_ip_header }},
+      protocolHeader={{ tomcat_proxy_protocol_header }}
+  when:
+    - tomcat_behind_proxy | bool
+
+# --- Section 9: SSL Keystore ---
+
+- name: Tomcat | assert | Validate SSL keystore settings
+  ansible.builtin.assert:
+    that:
+      - tomcat_ssl_keystore_file is defined
+      - tomcat_ssl_keystore_file is string
+      - tomcat_ssl_keystore_file | length > 0
+      - tomcat_ssl_keystore_password is defined
+      - tomcat_ssl_keystore_password is string
+      - tomcat_ssl_keystore_password | length > 0
+      - tomcat_ssl_keystore_type is defined
+      - tomcat_ssl_keystore_type in ['PKCS12', 'JKS']
+      - tomcat_ssl_key_alias is defined
+      - tomcat_ssl_key_alias is string
+      - tomcat_ssl_key_alias | length > 0
+      - tomcat_ssl_protocol is defined
+      - tomcat_ssl_protocol is string
+      - tomcat_ssl_protocol | length > 0
+      - tomcat_ssl_enabled_protocols is defined
+      - tomcat_ssl_enabled_protocols is string
+      - tomcat_ssl_enabled_protocols | length > 0
+      - tomcat_ssl_ciphers is defined
+      - tomcat_ssl_ciphers is string
+      - tomcat_ssl_ciphers | length > 0
+      - tomcat_ssl_keystore_src is defined
+      - tomcat_ssl_generate_self_signed is defined
+    fail_msg: "Invalid SSL keystore settings. Check keystore_file, keystore_password, keystore_type (PKCS12/JKS), key_alias, protocol, ciphers, and enabled_protocols."
+    success_msg: "SSL keystore settings validated: type={{ tomcat_ssl_keystore_type }}, alias={{ tomcat_ssl_key_alias }}"
+  when:
+    - tomcat_enable_ssl | bool
+
+- name: Tomcat | assert | Validate self-signed certificate settings
+  ansible.builtin.assert:
+    that:
+      - tomcat_ssl_self_signed_validity is defined
+      - tomcat_ssl_self_signed_validity | int > 0
+      - tomcat_ssl_self_signed_dname is defined
+      - tomcat_ssl_self_signed_dname is string
+      - tomcat_ssl_self_signed_dname | length > 0
+    fail_msg: "Invalid self-signed certificate settings. Validity must be a positive integer, dname must be a non-empty string."
+    success_msg: "Self-signed settings validated: validity={{ tomcat_ssl_self_signed_validity }} days"
+  when:
+    - tomcat_enable_ssl | bool
+    - tomcat_ssl_keystore_src | default('') | length == 0
+    - tomcat_ssl_generate_self_signed | bool
+
+# --- Section 10: JMX ---
+
+- name: Tomcat | assert | Validate JMX toggle
+  ansible.builtin.assert:
+    that:
+      - tomcat_enable_jmx is defined
+    fail_msg: "tomcat_enable_jmx must be defined."
+    success_msg: "JMX toggle validated: {{ tomcat_enable_jmx }}"
+
+- name: Tomcat | assert | Validate JMX listen address
+  ansible.builtin.assert:
+    that:
+      - tomcat_jmx_address is defined
+      - tomcat_jmx_address is string
+      - tomcat_jmx_address | length > 0
+    fail_msg: "tomcat_jmx_address must be a non-empty string."
+    success_msg: "JMX listen address validated: {{ tomcat_jmx_address }}"
+  when:
+    - tomcat_enable_jmx | bool
+
+- name: Tomcat | assert | Validate JMX details
+  ansible.builtin.assert:
+    that:
+      - tomcat_jmx_port is defined
+      - tomcat_jmx_port | int >= 1
+      - tomcat_jmx_port | int <= 65535
+      - tomcat_jmx_rmi_port is defined
+      - tomcat_jmx_rmi_port | int >= 1
+      - tomcat_jmx_rmi_port | int <= 65535
+      - tomcat_jmx_role is defined
+      - tomcat_jmx_role in ['readonly', 'readwrite']
+      - tomcat_jmx_password is defined
+      - tomcat_jmx_password is string
+      - tomcat_jmx_password | length > 0
+      - tomcat_jmx_access_file is defined
+      - tomcat_jmx_access_file is string
+      - tomcat_jmx_access_file | length > 0
+      - tomcat_jmx_password_file is defined
+      - tomcat_jmx_password_file is string
+      - tomcat_jmx_password_file | length > 0
+    fail_msg: "Invalid JMX settings. Ports must be 1-65535, role must be 'readonly' or 'readwrite', password must be non-empty, file paths must be defined."
+    success_msg: "JMX settings validated: port={{ tomcat_jmx_port }}, rmi={{ tomcat_jmx_rmi_port }}, role={{ tomcat_jmx_role }}"
+  when:
+    - tomcat_enable_jmx | bool
+
+# --- Section 11: Hardening ---
+
+- name: Tomcat | assert | Validate hardening settings
+  ansible.builtin.assert:
+    that:
+      - tomcat_enable_hardening is defined
+      - tomcat_unpack_wars is defined
+      - tomcat_auto_deploy is defined
+    fail_msg: "Hardening toggles must be defined."
+    success_msg: "Hardening toggles validated: enabled={{ tomcat_enable_hardening }}, unpackWARs={{ tomcat_unpack_wars }}, autoDeploy={{ tomcat_auto_deploy }}"
+
+- name: Tomcat | assert | Validate hardening app removal list
+  ansible.builtin.assert:
+    that:
+      - tomcat_default_apps_to_remove is defined
+      - tomcat_default_apps_to_remove is iterable
+    fail_msg: "tomcat_default_apps_to_remove must be a list."
+    success_msg: "Hardening app list validated: {{ tomcat_default_apps_to_remove | length }} apps to remove"
+  when:
+    - tomcat_enable_hardening | bool
+
+# --- Section 12: Systemd ---
+
+- name: Tomcat | assert | Validate systemd settings
+  ansible.builtin.assert:
+    that:
+      - tomcat_service_name is defined
+      - tomcat_service_name is string
+      - tomcat_service_name | length > 0
+      - tomcat_service_enabled is defined
+      - tomcat_systemd_limit_nofile is defined
+      - tomcat_systemd_limit_nofile | int > 0
+      - tomcat_systemd_restart_sec is defined
+      - tomcat_systemd_restart_sec | int >= 0
+    fail_msg: "Invalid systemd settings. service_name must be non-empty, limit_nofile must be positive, restart_sec must be >= 0."
+    success_msg: "Systemd settings validated: service={{ tomcat_service_name }}, nofile={{ tomcat_systemd_limit_nofile }}"
+
+# --- Section 13: Logrotate ---
+
+- name: Tomcat | assert | Validate logrotate toggle
+  ansible.builtin.assert:
+    that:
+      - tomcat_configure_logrotate is defined
+    fail_msg: "tomcat_configure_logrotate must be defined."
+    success_msg: "Logrotate toggle validated: {{ tomcat_configure_logrotate }}"
+
+- name: Tomcat | assert | Validate logrotate settings
+  ansible.builtin.assert:
+    that:
+      - tomcat_logrotate_options is defined
+      - tomcat_logrotate_options is mapping
+      - tomcat_logrotate_options.frequency is defined
+      - tomcat_logrotate_options.frequency in ['hourly', 'daily', 'weekly', 'monthly']
+      - tomcat_logrotate_options.count is defined
+      - tomcat_logrotate_options.count | int > 0
+      - tomcat_logrotate_options.missingok is defined
+      - tomcat_logrotate_options.compress is defined
+      - tomcat_logrotate_options.nocreate is defined
+      - tomcat_logrotate_options.copytruncate is defined
+      - tomcat_logrotate_options.dateext is defined
+    fail_msg: "Invalid logrotate settings. Frequency must be hourly/daily/weekly/monthly, count must be positive."
+    success_msg: "Logrotate settings validated: frequency={{ tomcat_logrotate_options.frequency }}, count={{ tomcat_logrotate_options.count }}"
+  when:
+    - tomcat_configure_logrotate | bool
+
+# --- Section 14: Upgrade ---
+
+- name: Tomcat | assert | Validate upgrade settings
+  ansible.builtin.assert:
+    that:
+      - tomcat_cleanup_old_versions is defined
+      - tomcat_cleanup_old_versions | type_debug in ['bool', 'AnsibleUnsafeText', 'str']
+      - tomcat_keep_old_versions is defined
+      - tomcat_keep_old_versions | int >= 0
+    fail_msg: >-
+      Invalid upgrade settings. tomcat_cleanup_old_versions must be a boolean,
+      tomcat_keep_old_versions must be a non-negative integer.
+    success_msg: >-
+      Upgrade settings validated: cleanup={{ tomcat_cleanup_old_versions }},
+      keep_old_versions={{ tomcat_keep_old_versions }}

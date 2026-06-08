@@ -1,0 +1,69 @@
+---
+# Apache Tomcat Molecule — Converge for upgrade scenario.
+# Simulates version upgrade: 9.0.117 → 9.0.118
+
+- name: Molecule | Converge (install old version)
+  hosts: all
+
+  pre_tasks:
+    - name: Converge | Wait for systemd to complete initialization
+      ansible.builtin.systemd:
+        name: multi-user.target
+        state: started
+      register: systemctl_status
+      until: true
+      retries: 30
+      delay: 5
+      when:
+        - ansible_facts['service_mgr'] == 'systemd'
+      changed_when: false
+      failed_when: false
+
+    - name: Converge | Check if upgraded version is already installed (idempotence check)
+      ansible.builtin.stat:
+        path: "/opt/tomcat/apache-tomcat-9.0.118"
+      register: __upgraded_version_check
+
+  vars:
+    tomcat_version: "9.0.117"
+    tomcat_enable_hardening: true
+    tomcat_enable_cicd: false
+    tomcat_enable_jmx: false
+    tomcat_ssl_generate_self_signed: true
+    tomcat_cleanup_old_versions: true
+    tomcat_keep_old_versions: 3
+
+  roles:
+    - role: ../../..
+      when: not (__upgraded_version_check.stat.exists | default(false))
+
+  post_tasks:
+    - name: Converge | Create dummy webapp marker file
+      become: true
+      ansible.builtin.copy:
+        content: "upgrade-test-marker"
+        dest: "/opt/tomcat/instance/webapps/test-app.marker"
+        owner: root
+        group: tomcat
+        mode: "0640"
+      when: not (__upgraded_version_check.stat.exists | default(false))
+
+- name: Molecule | Converge (upgrade to new version)
+  hosts: all
+
+  vars:
+    tomcat_version: "9.0.118"
+    tomcat_enable_hardening: true
+    tomcat_enable_cicd: false
+    tomcat_enable_jmx: false
+    tomcat_ssl_generate_self_signed: true
+    tomcat_cleanup_old_versions: true
+    tomcat_keep_old_versions: 3
+
+  roles:
+    - role: ../../..
+
+  post_tasks:
+    - name: Converge | Upgrade scenario execution completed
+      ansible.builtin.debug:
+        msg: "Upgrade from 9.0.117 to 9.0.118 completed"

@@ -1,0 +1,271 @@
+---
+# Apache Tomcat Molecule — Verify default scenario results.
+
+- name: Molecule | Verify Role
+  hosts: all
+  gather_facts: true
+  vars:
+    tomcat_version: "9.0.118"
+    tomcat_install_dir: "/opt/tomcat"
+    tomcat_catalina_home: "{{ tomcat_install_dir }}/apache-tomcat-{{ tomcat_version }}"
+    tomcat_catalina_base: "{{ tomcat_install_dir }}/instance"
+    tomcat_log_dir: "/var/log/tomcat"
+
+  tasks:
+    # --- User and Group verification ---
+    - name: Verify | Check Tomcat group exists
+      ansible.builtin.command: "getent group tomcat"
+      register: __verify_group
+      changed_when: false
+
+    - name: Verify | Assert Tomcat group exists
+      ansible.builtin.assert:
+        that:
+          - __verify_group.rc == 0
+        fail_msg: "Tomcat group does not exist"
+        success_msg: "Tomcat group verified"
+
+    - name: Verify | Check Tomcat user exists
+      ansible.builtin.command: "getent passwd tomcat"
+      register: __verify_user
+      changed_when: false
+
+    - name: Verify | Assert Tomcat user exists with nologin shell
+      ansible.builtin.assert:
+        that:
+          - __verify_user.rc == 0
+          - "'/sbin/nologin' in __verify_user.stdout"
+        fail_msg: "Tomcat user does not exist or has wrong shell"
+        success_msg: "Tomcat user verified"
+
+    # --- CATALINA_HOME verification ---
+    - name: Verify | Check CATALINA_HOME exists
+      ansible.builtin.stat:
+        path: "{{ tomcat_catalina_home }}/bin/catalina.sh"
+      register: __verify_catalina_home
+
+    - name: Verify | Assert CATALINA_HOME exists
+      ansible.builtin.assert:
+        that:
+          - __verify_catalina_home.stat.exists
+        fail_msg: "CATALINA_HOME binary not found"
+        success_msg: "CATALINA_HOME verified"
+
+    # --- Symlink verification ---
+    - name: Verify | Check version symlink
+      ansible.builtin.stat:
+        path: "{{ tomcat_install_dir }}/current"
+      register: __verify_symlink
+
+    - name: Verify | Assert symlink exists and is a link
+      ansible.builtin.assert:
+        that:
+          - __verify_symlink.stat.exists
+          - __verify_symlink.stat.islnk
+        fail_msg: "Version symlink not found or not a symlink"
+        success_msg: "Version symlink verified"
+
+    # --- CATALINA_BASE verification ---
+    - name: Verify | Check CATALINA_BASE directories
+      ansible.builtin.stat:
+        path: "{{ tomcat_catalina_base }}/{{ item }}"
+      register: __verify_base_dirs
+      loop:
+        - conf
+        - bin
+        - lib
+        - temp
+        - work
+        - webapps
+
+    - name: Verify | Assert all CATALINA_BASE directories exist
+      ansible.builtin.assert:
+        that:
+          - item.stat.exists
+          - item.stat.isdir
+        fail_msg: "CATALINA_BASE directory {{ item.item }} not found"
+        success_msg: "CATALINA_BASE directory {{ item.item }} verified"
+      loop: "{{ __verify_base_dirs.results }}"
+
+    # --- Configuration files verification ---
+    - name: Verify | Check server.xml exists with correct permissions
+      ansible.builtin.stat:
+        path: "{{ tomcat_catalina_base }}/conf/server.xml"
+      register: __verify_server_xml
+
+    - name: Verify | Assert server.xml exists and has mode 0640
+      ansible.builtin.assert:
+        that:
+          - __verify_server_xml.stat.exists
+          - __verify_server_xml.stat.mode == '0640'
+        fail_msg: "server.xml not found or wrong permissions"
+        success_msg: "server.xml verified (mode: {{ __verify_server_xml.stat.mode }})"
+
+    - name: Verify | Check web.xml exists
+      ansible.builtin.stat:
+        path: "{{ tomcat_catalina_base }}/conf/web.xml"
+      register: __verify_web_xml
+
+    - name: Verify | Assert web.xml exists and has mode 0640
+      ansible.builtin.assert:
+        that:
+          - __verify_web_xml.stat.exists
+          - __verify_web_xml.stat.mode == '0640'
+        fail_msg: "web.xml not found or wrong permissions"
+        success_msg: "web.xml verified"
+
+    - name: Verify | Check tomcat-users.xml exists
+      ansible.builtin.stat:
+        path: "{{ tomcat_catalina_base }}/conf/tomcat-users.xml"
+      register: __verify_tomcat_users_xml
+
+    - name: Verify | Assert tomcat-users.xml exists and has mode 0640
+      ansible.builtin.assert:
+        that:
+          - __verify_tomcat_users_xml.stat.exists
+          - __verify_tomcat_users_xml.stat.mode == '0640'
+        fail_msg: "tomcat-users.xml not found or wrong permissions"
+        success_msg: "tomcat-users.xml verified (mode: {{ __verify_tomcat_users_xml.stat.mode }})"
+
+    - name: Verify | Check setenv.sh exists
+      ansible.builtin.stat:
+        path: "{{ tomcat_catalina_base }}/bin/setenv.sh"
+      register: __verify_setenv
+
+    - name: Verify | Assert setenv.sh exists and is executable
+      ansible.builtin.assert:
+        that:
+          - __verify_setenv.stat.exists
+          - __verify_setenv.stat.mode == '0750'
+        fail_msg: "setenv.sh not found or wrong permissions"
+        success_msg: "setenv.sh verified"
+
+    # --- Self-signed keystore verification ---
+    - name: Verify | Check self-signed keystore exists
+      ansible.builtin.stat:
+        path: "{{ tomcat_catalina_base }}/conf/keystore.p12"
+      register: __verify_keystore
+
+    - name: Verify | Assert keystore exists with correct permissions
+      ansible.builtin.assert:
+        that:
+          - __verify_keystore.stat.exists
+          - __verify_keystore.stat.mode == '0640'
+        fail_msg: "Self-signed keystore not found or wrong permissions"
+        success_msg: "Self-signed keystore verified"
+
+    # --- Self-signed SSL cleanup verification (defense-in-depth) ---
+    - name: Verify | Check self-signed private key was cleaned up
+      ansible.builtin.stat:
+        path: "{{ tomcat_catalina_base }}/conf/keystore.key"
+      register: __verify_private_key
+
+    - name: Verify | Assert private key was removed after keystore generation
+      ansible.builtin.assert:
+        that:
+          - not __verify_private_key.stat.exists
+        fail_msg: "Self-signed private key still exists (cleanup failed)"
+        success_msg: "Self-signed private key cleaned up (defense-in-depth verified)"
+
+    - name: Verify | Check self-signed certificate was cleaned up
+      ansible.builtin.stat:
+        path: "{{ tomcat_catalina_base }}/conf/keystore.crt"
+      register: __verify_certificate
+
+    - name: Verify | Assert certificate was removed after keystore generation
+      ansible.builtin.assert:
+        that:
+          - not __verify_certificate.stat.exists
+        fail_msg: "Self-signed certificate still exists (cleanup failed)"
+        success_msg: "Self-signed certificate cleaned up (defense-in-depth verified)"
+
+    - name: Verify | Check self-signed CSR was cleaned up
+      ansible.builtin.stat:
+        path: "{{ tomcat_catalina_base }}/conf/keystore.csr"
+      register: __verify_csr
+
+    - name: Verify | Assert CSR was removed after keystore generation
+      ansible.builtin.assert:
+        that:
+          - not __verify_csr.stat.exists
+        fail_msg: "Self-signed CSR still exists (cleanup failed)"
+        success_msg: "Self-signed CSR cleaned up (defense-in-depth verified)"
+
+    # --- Log directory verification ---
+    - name: Verify | Check log directory exists
+      ansible.builtin.stat:
+        path: "{{ tomcat_log_dir }}"
+      register: __verify_log_dir
+
+    - name: Verify | Assert log directory exists with correct ownership
+      ansible.builtin.assert:
+        that:
+          - __verify_log_dir.stat.exists
+          - __verify_log_dir.stat.isdir
+          - __verify_log_dir.stat.mode == '0750'
+        fail_msg: "Log directory not found or wrong permissions"
+        success_msg: "Log directory verified"
+
+    # --- Logs symlink verification ---
+    - name: Verify | Check logs symlink in CATALINA_BASE
+      ansible.builtin.stat:
+        path: "{{ tomcat_catalina_base }}/logs"
+      register: __verify_logs_symlink
+
+    - name: Verify | Assert logs symlink exists
+      ansible.builtin.assert:
+        that:
+          - __verify_logs_symlink.stat.exists
+          - __verify_logs_symlink.stat.islnk
+        fail_msg: "Logs symlink not found"
+        success_msg: "Logs symlink verified"
+
+    # --- Systemd service verification ---
+    - name: Verify | Check systemd service file exists
+      ansible.builtin.stat:
+        path: "/etc/systemd/system/tomcat.service"
+      register: __verify_service_file
+
+    - name: Verify | Assert systemd service file exists
+      ansible.builtin.assert:
+        that:
+          - __verify_service_file.stat.exists
+        fail_msg: "Systemd service file not found"
+        success_msg: "Systemd service file verified"
+
+    # --- Logrotate verification ---
+    - name: Verify | Check logrotate configuration exists
+      ansible.builtin.stat:
+        path: "/etc/logrotate.d/tomcat"
+      register: __verify_logrotate
+
+    - name: Verify | Assert logrotate configuration exists
+      ansible.builtin.assert:
+        that:
+          - __verify_logrotate.stat.exists
+        fail_msg: "Logrotate configuration not found"
+        success_msg: "Logrotate configuration verified"
+
+    # --- Hardening verification ---
+    - name: Verify | Check default apps removed from CATALINA_HOME
+      ansible.builtin.stat:
+        path: "{{ tomcat_catalina_home }}/webapps/{{ item }}"
+      register: __verify_default_apps
+      loop:
+        - ROOT
+        - manager
+        - host-manager
+        - docs
+        - examples
+
+    - name: Verify | Assert default apps are removed
+      ansible.builtin.assert:
+        that:
+          - not item.stat.exists
+        fail_msg: "Default app {{ item.item }} was not removed"
+        success_msg: "Default app {{ item.item }} removed (hardening verified)"
+      loop: "{{ __verify_default_apps.results }}"
+
+    - name: Verify | All checks completed successfully
+      ansible.builtin.debug:
+        msg: "All Apache Tomcat default scenario verification checks passed"

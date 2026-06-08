@@ -1,0 +1,97 @@
+---
+# Apache Tomcat Molecule — Verify cicd scenario results.
+
+- name: Molecule | Verify CI/CD
+  hosts: all
+  gather_facts: true
+  vars:
+    tomcat_install_dir: "/opt/tomcat"
+    tomcat_catalina_base: "{{ tomcat_install_dir }}/instance"
+
+  tasks:
+    # --- Deployer user verification ---
+    - name: Verify | Check deployer user exists
+      ansible.builtin.command: "getent passwd deployer"
+      register: __verify_deployer_user
+      changed_when: false
+
+    - name: Verify | Assert deployer user exists with bash shell
+      ansible.builtin.assert:
+        that:
+          - __verify_deployer_user.rc == 0
+          - "'/bin/bash' in __verify_deployer_user.stdout"
+        fail_msg: "Deployer user does not exist or has wrong shell"
+        success_msg: "Deployer user verified"
+
+    # --- Deployer group membership ---
+    - name: Verify | Check deployer is in tomcat group
+      ansible.builtin.command: "id -nG deployer"
+      register: __verify_deployer_groups
+      changed_when: false
+
+    - name: Verify | Assert deployer is in tomcat group
+      ansible.builtin.assert:
+        that:
+          - "'tomcat' in __verify_deployer_groups.stdout"
+        fail_msg: "Deployer is not in tomcat group"
+        success_msg: "Deployer group membership verified"
+
+    # --- Sudoers file verification ---
+    - name: Verify | Check sudoers file exists
+      ansible.builtin.stat:
+        path: "/etc/sudoers.d/tomcat-deployer"
+      register: __verify_sudoers
+
+    - name: Verify | Assert sudoers file exists with correct permissions
+      ansible.builtin.assert:
+        that:
+          - __verify_sudoers.stat.exists
+          - __verify_sudoers.stat.mode == '0440'
+        fail_msg: "Sudoers file not found or wrong permissions"
+        success_msg: "Sudoers file verified"
+
+    - name: Verify | Check sudoers file content
+      ansible.builtin.command: "cat /etc/sudoers.d/tomcat-deployer"
+      register: __verify_sudoers_content
+      changed_when: false
+
+    - name: Verify | Assert sudoers allows Tomcat restart
+      ansible.builtin.assert:
+        that:
+          - "'NOPASSWD' in __verify_sudoers_content.stdout"
+          - "'systemctl restart tomcat' in __verify_sudoers_content.stdout"
+        fail_msg: "Sudoers file does not contain correct restart permission"
+        success_msg: "Sudoers content verified"
+
+    # --- Webapps ownership verification ---
+    - name: Verify | Check webapps directory ownership
+      ansible.builtin.stat:
+        path: "{{ tomcat_catalina_base }}/webapps"
+      register: __verify_webapps
+
+    - name: Verify | Assert webapps owned by deployer
+      ansible.builtin.assert:
+        that:
+          - __verify_webapps.stat.exists
+          - __verify_webapps.stat.pw_name == 'deployer'
+          - __verify_webapps.stat.gr_name == 'tomcat'
+          - __verify_webapps.stat.mode == '2770'
+        fail_msg: "Webapps directory has wrong ownership or permissions"
+        success_msg: "Webapps ownership verified (deployer:tomcat, 2770)"
+
+    # --- Authorized keys verification ---
+    - name: Verify | Check authorized_keys exists for deployer
+      ansible.builtin.stat:
+        path: "/home/deployer/.ssh/authorized_keys"
+      register: __verify_auth_keys
+
+    - name: Verify | Assert authorized_keys exists
+      ansible.builtin.assert:
+        that:
+          - __verify_auth_keys.stat.exists
+        fail_msg: "Authorized keys file not found for deployer"
+        success_msg: "Authorized keys file verified"
+
+    - name: Verify | All CI/CD checks completed successfully
+      ansible.builtin.debug:
+        msg: "All Apache Tomcat CI/CD scenario verification checks passed"

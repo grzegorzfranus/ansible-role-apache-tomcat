@@ -1,0 +1,29 @@
+---
+# =============================================================================
+# Ansible Role: Apache Tomcat - Tasks: Logrotate
+# =============================================================================
+# Configure log rotation for Tomcat text log files (catalina.out, access logs).
+# GC logs are handled natively by JVM -Xlog parameters in setenv.sh.
+# =============================================================================
+
+- name: Tomcat | logrotate | Ensure archive log directory exists
+  become: true
+  ansible.builtin.file:
+    path: "{{ tomcat_logrotate_options.archive_directory_path }}"
+    state: directory
+    owner: "{{ tomcat_user }}"
+    group: "{{ tomcat_group }}"
+    mode: "0750"
+  when: >
+    tomcat_logrotate_options.archive_directory_path is defined and
+    tomcat_logrotate_options.archive_directory_path | length > 0
+
+- name: Tomcat | logrotate | Deploy logrotate configuration file
+  become: true
+  ansible.builtin.template:
+    src: logrotate/tomcat.j2
+    dest: "/etc/logrotate.d/{{ tomcat_service_name }}"
+    owner: root
+    group: root
+    mode: "0644"
+    backup: true

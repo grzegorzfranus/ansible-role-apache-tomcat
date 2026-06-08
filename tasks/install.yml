@@ -1,0 +1,129 @@
+---
+# =============================================================================
+# Ansible Role: Apache Tomcat - Tasks: Install
+# =============================================================================
+# Downloads the Tomcat archive (from custom URL or Apache Archive), extracts
+# it to CATALINA_HOME, sets root ownership, and manages the version symlink.
+# =============================================================================
+
+- name: Tomcat | install | Create installation directory
+  become: true
+  ansible.builtin.file:
+    path: "{{ tomcat_install_dir }}"
+    state: directory
+    owner: root
+    group: root
+    mode: "0755"
+
+- name: Tomcat | install | Determine download URL
+  ansible.builtin.set_fact:
+    __tomcat_download_url: >-
+      {{ tomcat_custom_download_url
+         if (tomcat_custom_download_url | default('') | length > 0)
+         else 'https://archive.apache.org/dist/tomcat/tomcat-'
+              ~ tomcat_major_version ~ '/v' ~ tomcat_version
+              ~ '/bin/apache-tomcat-' ~ tomcat_version ~ '.tar.gz' }}
+
+- name: Tomcat | install | Check if CATALINA_HOME already exists
+  ansible.builtin.stat:
+    path: "{{ tomcat_catalina_home }}/bin/catalina.sh"
+  register: __tomcat_catalina_home_check
+
+- name: Tomcat | install | Download Tomcat archive
+  become: true
+  ansible.builtin.get_url:
+    url: "{{ __tomcat_download_url }}"
+    dest: "{{ tomcat_download_tmp_dir }}/apache-tomcat-{{ tomcat_version }}.tar.gz"
+    checksum: "{{ tomcat_download_checksum | default(omit, true) }}"
+    timeout: "{{ tomcat_download_timeout }}"
+    mode: "0644"
+  when:
+    - not __tomcat_catalina_home_check.stat.exists
+
+- name: Tomcat | install | Extract Tomcat archive
+  become: true
+  ansible.builtin.unarchive:
+    src: "{{ tomcat_download_tmp_dir }}/apache-tomcat-{{ tomcat_version }}.tar.gz"
+    dest: "{{ tomcat_install_dir }}"
+    remote_src: true
+    creates: "{{ tomcat_catalina_home }}/bin/catalina.sh"
+  when:
+    - not __tomcat_catalina_home_check.stat.exists
+  notify:
+    - Tomcat | handlers | Restart Tomcat service
+
+- name: Tomcat | install | Set CATALINA_HOME ownership to root (recursive)
+  become: true
+  ansible.builtin.file:
+    path: "{{ tomcat_catalina_home }}"
+    state: directory
+    owner: root
+    group: root
+    recurse: true
+
+- name: Tomcat | install | Find all directories in CATALINA_HOME
+  ansible.builtin.find:
+    paths: "{{ tomcat_catalina_home }}"
+    recurse: true
+    file_type: directory
+  register: __tomcat_catalina_home_dirs
+
+- name: Tomcat | install | Set CATALINA_HOME directory permissions (0755)
+  become: true
+  ansible.builtin.file:
+    path: "{{ item.path }}"
+    mode: "0755"
+  loop: "{{ __tomcat_catalina_home_dirs.files }}"
+  loop_control:
+    label: "{{ item.path | basename }}"
+
+- name: Tomcat | install | Find all regular files in CATALINA_HOME (excluding scripts)
+  ansible.builtin.find:
+    paths: "{{ tomcat_catalina_home }}"
+    recurse: true
+    file_type: file
+    excludes: "*.sh"
+  register: __tomcat_catalina_home_files
+
+- name: Tomcat | install | Set CATALINA_HOME file permissions (0644)
+  become: true
+  ansible.builtin.file:
+    path: "{{ item.path }}"
+    mode: "0644"
+  loop: "{{ __tomcat_catalina_home_files.files }}"
+  loop_control:
+    label: "{{ item.path | basename }}"
+
+- name: Tomcat | install | Find shell scripts in CATALINA_HOME/bin
+  ansible.builtin.find:
+    paths: "{{ tomcat_catalina_home }}/bin"
+    patterns: "*.sh"
+    file_type: file
+  register: __tomcat_catalina_home_scripts
+
+- name: Tomcat | install | Set CATALINA_HOME shell script permissions (0755)
+  become: true
+  ansible.builtin.file:
+    path: "{{ item.path }}"
+    mode: "0755"
+  loop: "{{ __tomcat_catalina_home_scripts.files }}"
+  loop_control:
+    label: "{{ item.path | basename }}"
+
+- name: Tomcat | install | Create version symlink
+  become: true
+  ansible.builtin.file:
+    src: "{{ tomcat_catalina_home }}"
+    dest: "{{ tomcat_symlink_path }}"
+    state: link
+    force: true
+  notify:
+    - Tomcat | handlers | Restart Tomcat service
+
+- name: Tomcat | install | Clean up downloaded archive
+  become: true
+  ansible.builtin.file:
+    path: "{{ tomcat_download_tmp_dir }}/apache-tomcat-{{ tomcat_version }}.tar.gz"
+    state: absent
+  when:
+    - not __tomcat_catalina_home_check.stat.exists

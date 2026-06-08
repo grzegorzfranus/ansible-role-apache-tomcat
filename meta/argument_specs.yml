@@ -1,0 +1,512 @@
+---
+argument_specs:
+  main:
+    short_description: "Install and configure Apache Tomcat"
+    description:
+      - "Installs Apache Tomcat using Split architecture (CATALINA_HOME / CATALINA_BASE)."
+      - "Configures HTTPS, JMX monitoring, systemd hardening, logrotate, and optional CI/CD deployment user."
+      - "Supports EL 9 (Rocky Linux, RHEL, AlmaLinux, CentOS Stream)."
+    author: "Grzegorz Franus"
+
+    options:
+      # -----------------------------------------------------------------
+      # 1. General Settings
+      # -----------------------------------------------------------------
+      tomcat_version:
+        description: "Version of Apache Tomcat to download and install"
+        type: str
+        default: "9.0.118"
+
+      tomcat_major_version:
+        description: "Major version number used to construct the Apache Archive download URL"
+        type: str
+        default: "9"
+
+      # -----------------------------------------------------------------
+      # 2. Users & Groups
+      # -----------------------------------------------------------------
+      tomcat_user:
+        description: "System user that runs the Tomcat process (shell: /sbin/nologin)"
+        type: str
+        default: "tomcat"
+
+      tomcat_group:
+        description: "System group for the Tomcat process"
+        type: str
+        default: "tomcat"
+
+      tomcat_uid:
+        description: "UID for the Tomcat system user"
+        type: int
+        default: 900
+
+      tomcat_gid:
+        description: "GID for the Tomcat system group"
+        type: int
+        default: 900
+
+      # -----------------------------------------------------------------
+      # 3. CI/CD Deployer
+      # -----------------------------------------------------------------
+      tomcat_enable_cicd:
+        description: "Enable creation of a dedicated deployment user with SSH keys and sudoers"
+        type: bool
+        default: false
+
+      tomcat_deployer_user:
+        description: "Name of the deployment user"
+        type: str
+        default: "deployer"
+
+      tomcat_deployer_uid:
+        description: "UID for the deployment user"
+        type: int
+        default: 901
+
+      tomcat_deployer_ssh_keys:
+        description: "List of public SSH keys to add to the deployer's authorized_keys"
+        type: list
+        elements: str
+        default: []
+
+      tomcat_deployer_sudoers_filename:
+        description: "Filename for the sudoers drop-in file in /etc/sudoers.d/"
+        type: str
+        default: "tomcat-deployer"
+
+      # -----------------------------------------------------------------
+      # 4. Paths
+      # -----------------------------------------------------------------
+      tomcat_install_dir:
+        description: "Parent directory for all Tomcat files (binaries, instance, symlink)"
+        type: str
+        default: "/opt/tomcat"
+
+      tomcat_catalina_home:
+        description: "Full path to the binary distribution directory (CATALINA_HOME)"
+        type: str
+        default: "{{ tomcat_install_dir }}/apache-tomcat-{{ tomcat_version }}"
+
+      tomcat_symlink_path:
+        description: "Path to the symlink pointing to the current Tomcat version"
+        type: str
+        default: "{{ tomcat_install_dir }}/current"
+
+      tomcat_catalina_base:
+        description: "Full path to the instance data directory (CATALINA_BASE)"
+        type: str
+        default: "{{ tomcat_install_dir }}/instance"
+
+      tomcat_log_dir:
+        description: "Dedicated log directory for Tomcat (outside CATALINA_BASE)"
+        type: str
+        default: "/var/log/tomcat"
+
+      # -----------------------------------------------------------------
+      # 5. Download
+      # -----------------------------------------------------------------
+      tomcat_custom_download_url:
+        description: "Full URL to a custom .tar.gz archive (e.g. Nexus). Empty = Apache Archive."
+        type: str
+        default: ""
+
+      tomcat_download_checksum:
+        description: "Checksum for the downloaded archive (format: 'sha512:HASH'). Empty = skip."
+        type: str
+        default: ""
+
+      tomcat_download_timeout:
+        description: "Download timeout in seconds"
+        type: int
+        default: 60
+
+      tomcat_download_tmp_dir:
+        description: "Temporary directory for the downloaded archive on the target host"
+        type: str
+        default: "/tmp"
+
+      # -----------------------------------------------------------------
+      # 6. Java
+      # -----------------------------------------------------------------
+      tomcat_java_home:
+        description: "Path to JAVA_HOME. Empty = auto-detect at runtime via readlink."
+        type: str
+        default: ""
+
+      # -----------------------------------------------------------------
+      # 7. JVM & CATALINA_OPTS
+      # -----------------------------------------------------------------
+      tomcat_jvm_heap_min:
+        description: "Minimum JVM heap size (-Xms)"
+        type: str
+        default: "512m"
+
+      tomcat_jvm_heap_max:
+        description: "Maximum JVM heap size (-Xmx)"
+        type: str
+        default: "1024m"
+
+      tomcat_jvm_metaspace_max:
+        description: "Maximum JVM Metaspace size (-XX:MaxMetaspaceSize)"
+        type: str
+        default: "256m"
+
+      tomcat_java_opts_extra:
+        description: "Additional JVM flags appended to CATALINA_OPTS (e.g. '-Dspring.profiles.active=prod')"
+        type: str
+        default: ""
+
+      tomcat_enable_gc_logging:
+        description: "Enable JVM Garbage Collection logging (JVM 11+ Unified Logging)"
+        type: bool
+        default: false
+
+      tomcat_gc_log_opts:
+        description: "GC logging JVM flags appended to CATALINA_OPTS when GC logging is enabled"
+        type: str
+        default: "-Xlog:gc*:file={{ tomcat_log_dir }}/gc.log:time,uptime,level,tags"
+
+      # -----------------------------------------------------------------
+      # 8. Network & SSL
+      # -----------------------------------------------------------------
+      tomcat_enable_ssl:
+        description: "Enable SSL/HTTPS connector and keystore management"
+        type: bool
+        default: true
+
+      tomcat_https_port:
+        description: "HTTPS connector listening port"
+        type: int
+        default: 8443
+
+      tomcat_https_address:
+        description: "Listen address for the HTTPS connector (0.0.0.0 = all interfaces)"
+        type: str
+        default: "0.0.0.0"
+
+      tomcat_shutdown_port:
+        description: "Shutdown port (-1 disables for security)"
+        type: int
+        default: -1
+
+      tomcat_enable_http:
+        description: "Enable the HTTP connector"
+        type: bool
+        default: false
+
+      tomcat_http_port:
+        description: "HTTP connector port (when enabled)"
+        type: int
+        default: 8080
+
+      tomcat_http_address:
+        description: "Listen address for the HTTP connector (0.0.0.0 = all interfaces)"
+        type: str
+        default: "0.0.0.0"
+
+      tomcat_enable_ajp:
+        description: "Enable the AJP connector"
+        type: bool
+        default: false
+
+      tomcat_ajp_port:
+        description: "AJP connector port (when enabled)"
+        type: int
+        default: 8009
+
+      tomcat_ajp_address:
+        description: "Listen address for the AJP connector (127.0.0.1 = localhost only)"
+        type: str
+        default: "127.0.0.1"
+
+      tomcat_server_header:
+        description: "Value of the server attribute in connectors (hides Tomcat version)"
+        type: str
+        default: "AppServer"
+
+      tomcat_connector_max_threads:
+        description: "Maximum worker threads per connector (controls concurrency)"
+        type: int
+        default: 200
+
+      tomcat_connector_connection_timeout:
+        description: "Connection timeout in milliseconds (mitigates slowloris)"
+        type: int
+        default: 20000
+
+      tomcat_connector_enable_lookups:
+        description: "Enable DNS reverse lookups on incoming requests"
+        type: bool
+        default: false
+
+      tomcat_connector_uri_encoding:
+        description: "URI encoding for request URLs"
+        type: str
+        default: "UTF-8"
+
+      tomcat_deploy_on_startup:
+        description: "Deploy applications found in webapps/ on startup (false = controlled deploy only)"
+        type: bool
+        default: false
+
+      tomcat_ajp_secret_required:
+        description: "Whether the AJP connector requires a secret (CVE-2020-1938 protection)"
+        type: bool
+        default: true
+
+      tomcat_ajp_secret:
+        description: "AJP connector secret (override with Ansible Vault!)"
+        type: str
+        default: ""
+        no_log: true
+
+      tomcat_force_https:
+        description: "Force HTTP to HTTPS redirect via RewriteValve (requires enable_ssl and enable_http)"
+        type: bool
+        default: true
+
+      tomcat_behind_proxy:
+        description: "Enable RemoteIpValve for Tomcat behind a reverse proxy"
+        type: bool
+        default: false
+
+      tomcat_proxy_internal_proxies:
+        description: "Java regex of trusted proxy IP addresses (dots must be escaped)"
+        type: str
+        default: >-
+          127\.0\.0\.1|::1|10\.\d{1,3}\.\d{1,3}\.\d{1,3}|192\.168\.\d{1,3}\.\d{1,3}|172\.(1[6-9]|2\d|3[01])\.\d{1,3}\.\d{1,3}
+
+      tomcat_proxy_remote_ip_header:
+        description: "HTTP header containing the original client IP (set by the reverse proxy)"
+        type: str
+        default: "X-Forwarded-For"
+
+      tomcat_proxy_protocol_header:
+        description: "HTTP header containing the original protocol (set by the reverse proxy)"
+        type: str
+        default: "X-Forwarded-Proto"
+
+      # -----------------------------------------------------------------
+      # 9. SSL Keystore
+      # -----------------------------------------------------------------
+      tomcat_ssl_keystore_file:
+        description: "Destination path for the keystore file on the target server"
+        type: str
+        default: "{{ tomcat_catalina_base }}/conf/keystore.p12"
+
+      tomcat_ssl_keystore_password:
+        description: "Keystore password (override with Ansible Vault!)"
+        type: str
+        default: "changeit"
+        no_log: true
+
+      tomcat_ssl_keystore_type:
+        description: "Keystore type"
+        type: str
+        default: "PKCS12"
+        choices:
+          - PKCS12
+          - JKS
+
+      tomcat_ssl_key_alias:
+        description: "Key alias within the keystore"
+        type: str
+        default: "tomcat"
+
+      tomcat_ssl_protocol:
+        description: "SSL protocol"
+        type: str
+        default: "TLS"
+
+      tomcat_ssl_enabled_protocols:
+        description: "Allowed TLS protocol versions"
+        type: str
+        default: "TLSv1.2+TLSv1.3"
+
+      tomcat_ssl_ciphers:
+        description: "TLS 1.2 cipher suite (OpenSSL naming). TLS 1.3 ciphers are managed by the JVM."
+        type: str
+        default: "ECDHE-ECDSA-AES256-GCM-SHA384:ECDHE-RSA-AES256-GCM-SHA384:ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES128-GCM-SHA256"
+
+      tomcat_ssl_keystore_src:
+        description: "Path on control node to a custom keystore (.p12). Empty = generate self-signed."
+        type: str
+        default: ""
+
+      tomcat_ssl_generate_self_signed:
+        description: "Generate a self-signed PKCS12 keystore when no custom keystore is provided"
+        type: bool
+        default: true
+
+      tomcat_ssl_self_signed_dname:
+        description: "Distinguished Name (DN) for the self-signed certificate"
+        type: str
+        default: "CN=localhost,OU=IT,O=Organization,L=City,ST=State,C=US"
+
+      tomcat_ssl_self_signed_validity:
+        description: "Validity period of the self-signed certificate in days"
+        type: int
+        default: 365
+
+      # -----------------------------------------------------------------
+      # 10. JMX
+      # -----------------------------------------------------------------
+      tomcat_enable_jmx:
+        description: "Enable secured JMX remote monitoring"
+        type: bool
+        default: false
+
+      tomcat_jmx_port:
+        description: "JMX registry port"
+        type: int
+        default: 9090
+
+      tomcat_jmx_rmi_port:
+        description: "JMX RMI server port"
+        type: int
+        default: 9091
+
+      tomcat_jmx_address:
+        description: "JMX RMI server hostname / listen address"
+        type: str
+        default: "localhost"
+
+      tomcat_jmx_role:
+        description: "JMX role name"
+        type: str
+        default: "readonly"
+        choices:
+          - readonly
+          - readwrite
+
+      tomcat_jmx_password:
+        description: "JMX password (override with Ansible Vault!)"
+        type: str
+        default: "changeit"
+        no_log: true
+
+      tomcat_jmx_access_file:
+        description: "Path to the JMX access file on the target server"
+        type: str
+        default: "{{ tomcat_catalina_base }}/conf/jmxremote.access"
+
+      tomcat_jmx_password_file:
+        description: "Path to the JMX password file on the target server"
+        type: str
+        default: "{{ tomcat_catalina_base }}/conf/jmxremote.password"
+
+      # -----------------------------------------------------------------
+      # 11. Hardening
+      # -----------------------------------------------------------------
+      tomcat_enable_hardening:
+        description: "Enable security hardening (remove default apps, disable autoDeploy/unpackWARs)"
+        type: bool
+        default: true
+
+      tomcat_default_apps_to_remove:
+        description: "Default Tomcat applications to remove from CATALINA_HOME/webapps/"
+        type: list
+        elements: str
+        default:
+          - "ROOT"
+          - "manager"
+          - "host-manager"
+          - "docs"
+          - "examples"
+
+      tomcat_unpack_wars:
+        description: "Unpack WAR files in the Host element of server.xml"
+        type: bool
+        default: false
+
+      tomcat_auto_deploy:
+        description: "Enable automatic deployment scanning in the Host element of server.xml"
+        type: bool
+        default: false
+
+      # -----------------------------------------------------------------
+      # 12. Systemd
+      # -----------------------------------------------------------------
+      tomcat_service_name:
+        description: "Name of the systemd service unit"
+        type: str
+        default: "tomcat"
+
+      tomcat_service_enabled:
+        description: "Enable automatic service start on system boot"
+        type: bool
+        default: true
+
+      tomcat_systemd_limit_nofile:
+        description: "Maximum open file descriptors for the Tomcat process (LimitNOFILE)"
+        type: int
+        default: 65536
+
+      tomcat_systemd_restart_sec:
+        description: "Delay in seconds before restarting the service after a failure"
+        type: int
+        default: 10
+
+      # -----------------------------------------------------------------
+      # 13. Logrotate
+      # -----------------------------------------------------------------
+      tomcat_configure_logrotate:
+        description: "Configure logrotate for Tomcat logs"
+        type: bool
+        default: true
+
+      tomcat_logrotate_options:
+        description: "Logrotate configuration options"
+        type: dict
+        default:
+          archive_directory_path: "/var/log/tomcat/archive"
+          frequency: "daily"
+          count: 14
+          missingok: true
+          compress: true
+          nocreate: true
+          copytruncate: true
+          dateext: true
+        options:
+          archive_directory_path:
+            description: "Directory to move old log files to"
+            type: str
+          frequency:
+            description: "Log rotation frequency"
+            type: str
+            choices:
+              - hourly
+              - daily
+              - weekly
+              - monthly
+          count:
+            description: "Number of rotated log files to keep"
+            type: int
+          missingok:
+            description: "Skip rotation if log file is missing"
+            type: bool
+          compress:
+            description: "Compress rotated log files"
+            type: bool
+          nocreate:
+            description: "Do not create new empty log file after rotation"
+            type: bool
+          copytruncate:
+            description: "Copy and truncate instead of moving (keeps FD open)"
+            type: bool
+          dateext:
+            description: "Use date extension for rotated file names"
+            type: bool
+
+      # -----------------------------------------------------------------
+      # 14. Upgrade
+      # -----------------------------------------------------------------
+      tomcat_cleanup_old_versions:
+        description: "Remove old Tomcat versions from installation directory after upgrade"
+        type: bool
+        default: false
+
+      tomcat_keep_old_versions:
+        description: "Number of previous Tomcat versions to keep in installation directory (current version always kept)"
+        type: int
+        default: 3

@@ -1,0 +1,91 @@
+---
+# =============================================================================
+# Ansible Role: Apache Tomcat - Tasks: Main
+# =============================================================================
+# Orchestrates role execution in order.
+# Flow: include_vars → assert → users → install → directories → config → systemd → logrotate → sudoers
+# =============================================================================
+
+- name: Tomcat | include_vars | Gather OS specific variables
+  ansible.builtin.include_vars: "{{ lookup('first_found', params) }}"
+  vars:
+    params:
+      files:
+        - "{{ ansible_facts['distribution'] | lower }}_{{ ansible_facts['distribution_version'] | lower }}.yml"
+        - "{{ ansible_facts['distribution'] | lower }}_{{ ansible_facts['distribution_major_version'] | lower }}.yml"
+        - "{{ ansible_facts['distribution'] | lower }}.yml"
+        - "{{ ansible_facts['os_family'] | lower }}_{{ ansible_facts['distribution_version'] | lower }}.yml"
+        - "{{ ansible_facts['os_family'] | lower }}_{{ ansible_facts['distribution_major_version'].split('.')[0] }}.yml"
+        - "{{ ansible_facts['os_family'] | lower }}.yml"
+        - "main.yml"
+      paths:
+        - "{{ role_path }}/vars"
+  tags:
+    - always
+
+- name: Tomcat | assert | Validate all role variables
+  ansible.builtin.include_tasks: assert.yml
+  tags:
+    - always
+    - validate
+
+- name: Tomcat | java_detect | Detect JAVA_HOME on target host
+  ansible.builtin.include_tasks: java_detect.yml
+  tags:
+    - always
+    - java
+
+- name: Tomcat | users | Create system users and groups
+  ansible.builtin.include_tasks: users.yml
+  tags:
+    - setup
+    - users
+
+- name: Tomcat | install | Download and install Tomcat
+  ansible.builtin.include_tasks: install.yml
+  tags:
+    - install
+    - setup
+
+- name: Tomcat | directories | Create Split Tomcat directory structure
+  ansible.builtin.include_tasks: directories.yml
+  tags:
+    - install
+    - setup
+
+- name: Tomcat | config | Configure Tomcat instance
+  ansible.builtin.include_tasks: config.yml
+  tags:
+    - configure
+    - setup
+
+- name: Tomcat | systemd | Configure systemd service
+  ansible.builtin.include_tasks: systemd.yml
+  tags:
+    - configure
+    - setup
+
+- name: Tomcat | logrotate | Configure log rotation
+  ansible.builtin.include_tasks: logrotate.yml
+  when:
+    - tomcat_configure_logrotate | bool
+  tags:
+    - configure
+    - logrotate
+
+- name: Tomcat | sudoers | Configure CI/CD deployer sudoers
+  ansible.builtin.include_tasks: sudoers.yml
+  when:
+    - tomcat_enable_cicd | bool
+  tags:
+    - configure
+    - setup
+
+- name: Tomcat | cleanup | Remove old Tomcat versions
+  ansible.builtin.include_tasks: cleanup.yml
+  when:
+    - tomcat_cleanup_old_versions | bool
+  tags:
+    - install
+    - setup
+    - cleanup

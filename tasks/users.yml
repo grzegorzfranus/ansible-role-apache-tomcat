@@ -1,0 +1,57 @@
+---
+# =============================================================================
+# Ansible Role: Apache Tomcat - Tasks: Users
+# =============================================================================
+# Creates system users and groups for the Tomcat service and optional CI/CD
+# deployer user with SSH key management.
+# =============================================================================
+
+- name: Tomcat | users | Create Tomcat system group
+  become: true
+  ansible.builtin.group:
+    name: "{{ tomcat_group }}"
+    gid: "{{ tomcat_gid }}"
+    system: true
+    state: present
+
+- name: Tomcat | users | Create Tomcat system user
+  become: true
+  ansible.builtin.user:
+    name: "{{ tomcat_user }}"
+    uid: "{{ tomcat_uid }}"
+    group: "{{ tomcat_group }}"
+    system: true
+    shell: "/sbin/nologin"
+    home: "{{ tomcat_catalina_base }}"
+    create_home: false
+    comment: "Apache Tomcat service account"
+    state: present
+
+# --- CI/CD Deployer (optional) ---
+
+- name: Tomcat | users | Create CI/CD deployer user
+  become: true
+  ansible.builtin.user:
+    name: "{{ tomcat_deployer_user }}"
+    uid: "{{ tomcat_deployer_uid }}"
+    groups: "{{ tomcat_group }}"
+    append: true
+    system: false
+    shell: "/bin/bash"
+    create_home: true
+    comment: "Tomcat CI/CD deployment account"
+    state: present
+  when:
+    - tomcat_enable_cicd | bool
+
+- name: Tomcat | users | Configure SSH authorized keys for deployer
+  become: true
+  ansible.posix.authorized_key:
+    user: "{{ tomcat_deployer_user }}"
+    key: "{{ item }}"
+    state: present
+  loop: "{{ tomcat_deployer_ssh_keys }}"
+  when:
+    - tomcat_enable_cicd | bool
+    - tomcat_deployer_ssh_keys | length > 0
+  no_log: true

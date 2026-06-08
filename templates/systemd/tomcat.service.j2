@@ -1,0 +1,63 @@
+#jinja2: trim_blocks: True, lstrip_blocks: True
+{{ ansible_managed | comment }}
+
+# =============================================================================
+# Apache Tomcat - Systemd Service Unit
+# =============================================================================
+# Enterprise Split Tomcat with kernel-level hardening
+# CATALINA_HOME: {{ tomcat_symlink_path }}
+# CATALINA_BASE: {{ tomcat_catalina_base }}
+# =============================================================================
+
+[Unit]
+Description=Apache Tomcat Application Server
+Documentation=https://tomcat.apache.org/tomcat-{{ tomcat_major_version }}.0-doc/
+After=network.target remote-fs.target nss-lookup.target
+
+[Service]
+Type=exec
+User={{ tomcat_user }}
+Group={{ tomcat_group }}
+UMask=0027
+
+Environment="CATALINA_HOME={{ tomcat_symlink_path }}"
+Environment="CATALINA_BASE={{ tomcat_catalina_base }}"
+
+ExecStart={{ tomcat_symlink_path }}/bin/catalina.sh run
+ExecStop={{ tomcat_symlink_path }}/bin/catalina.sh stop 30 -force
+
+TimeoutStopSec=45
+KillSignal=SIGTERM
+FinalKillSignal=SIGKILL
+
+# --- Kernel-level hardening ---
+ProtectSystem=strict
+PrivateTmp=true
+ProtectHome=true
+NoNewPrivileges=true
+ProtectKernelTunables=true
+ProtectKernelModules=true
+ProtectControlGroups=true
+RestrictSUIDSGID=true
+
+# Read-write access only for instance data and logs
+ReadWritePaths={{ tomcat_catalina_base }}/temp
+ReadWritePaths={{ tomcat_catalina_base }}/work
+ReadWritePaths={{ tomcat_log_dir }}
+ReadWritePaths={{ tomcat_catalina_base }}/webapps
+ReadOnlyPaths={{ tomcat_symlink_path }}
+
+# --- Resource limits ---
+LimitNOFILE={{ tomcat_systemd_limit_nofile }}
+
+# --- Restart policy ---
+Restart=on-failure
+RestartSec={{ tomcat_systemd_restart_sec }}
+
+# --- Logging ---
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier={{ tomcat_service_name }}
+
+[Install]
+WantedBy=multi-user.target

@@ -1,0 +1,89 @@
+---
+# =============================================================================
+# Ansible Role: Apache Tomcat - Tasks: Directories
+# =============================================================================
+# Creates the Split Tomcat directory structure (CATALINA_BASE) with proper
+# ownership and permissions. Webapps ownership depends on CI/CD mode.
+# =============================================================================
+
+- name: Tomcat | directories | Create CATALINA_BASE directory
+  become: true
+  ansible.builtin.file:
+    path: "{{ tomcat_catalina_base }}"
+    state: directory
+    owner: root
+    group: "{{ tomcat_group }}"
+    mode: "0750"
+
+- name: Tomcat | directories | Create CATALINA_BASE subdirectories (root-owned)
+  become: true
+  ansible.builtin.file:
+    path: "{{ tomcat_catalina_base }}/{{ item }}"
+    state: directory
+    owner: root
+    group: "{{ tomcat_group }}"
+    mode: "0750"
+  loop:
+    - bin
+    - conf
+    - lib
+
+- name: Tomcat | directories | Create Catalina context directories
+  become: true
+  ansible.builtin.file:
+    path: "{{ tomcat_catalina_base }}/conf/Catalina/localhost"
+    state: directory
+    owner: "{{ tomcat_user }}"
+    group: "{{ tomcat_group }}"
+    mode: "0750"
+
+- name: Tomcat | directories | Create CATALINA_BASE subdirectories (tomcat-owned)
+  become: true
+  ansible.builtin.file:
+    path: "{{ tomcat_catalina_base }}/{{ item }}"
+    state: directory
+    owner: "{{ tomcat_user }}"
+    group: "{{ tomcat_group }}"
+    mode: "0750"
+  loop:
+    - temp
+    - work
+
+- name: Tomcat | directories | Create webapps directory (CI/CD deployer owner)
+  become: true
+  ansible.builtin.file:
+    path: "{{ tomcat_catalina_base }}/webapps"
+    state: directory
+    owner: "{{ tomcat_deployer_user }}"
+    group: "{{ tomcat_group }}"
+    mode: "2770"
+  when:
+    - tomcat_enable_cicd | bool
+
+- name: Tomcat | directories | Create webapps directory (root owner)
+  become: true
+  ansible.builtin.file:
+    path: "{{ tomcat_catalina_base }}/webapps"
+    state: directory
+    owner: root
+    group: "{{ tomcat_group }}"
+    mode: "0750"
+  when:
+    - not (tomcat_enable_cicd | bool)
+
+- name: Tomcat | directories | Create dedicated log directory
+  become: true
+  ansible.builtin.file:
+    path: "{{ tomcat_log_dir }}"
+    state: directory
+    owner: "{{ tomcat_user }}"
+    group: "{{ tomcat_group }}"
+    mode: "0750"
+
+- name: Tomcat | directories | Create logs symlink in CATALINA_BASE
+  become: true
+  ansible.builtin.file:
+    src: "{{ tomcat_log_dir }}"
+    dest: "{{ tomcat_catalina_base }}/logs"
+    state: link
+    force: true

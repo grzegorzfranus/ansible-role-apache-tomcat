@@ -1,0 +1,50 @@
+#jinja2: trim_blocks: True, lstrip_blocks: True
+#!/bin/bash
+{{ ansible_managed | comment }}
+
+# =============================================================================
+# Apache Tomcat - Environment Configuration (setenv.sh)
+# =============================================================================
+# Sets JAVA_HOME, CATALINA_OPTS, CATALINA_PID, and optional JMX parameters.
+# Placed in CATALINA_BASE/bin/ to override CATALINA_HOME defaults.
+# =============================================================================
+
+# JAVA_HOME detection (resolves symlinks for upgrade-safe path)
+{% if tomcat_java_home | default('') | length > 0 %}
+JAVA_HOME="{{ tomcat_java_home }}"
+{% else %}
+JAVA_HOME="$(dirname "$(dirname "$(readlink -f /usr/bin/java)")")"
+{% endif %}
+export JAVA_HOME
+
+# --- JVM base options (always included) ---
+CATALINA_OPTS="-Xms{{ tomcat_jvm_heap_min }}"
+CATALINA_OPTS="${CATALINA_OPTS} -Xmx{{ tomcat_jvm_heap_max }}"
+CATALINA_OPTS="${CATALINA_OPTS} -XX:MaxMetaspaceSize={{ tomcat_jvm_metaspace_max }}"
+CATALINA_OPTS="${CATALINA_OPTS} -Djava.awt.headless=true"
+CATALINA_OPTS="${CATALINA_OPTS} -Djava.security.egd=file:/dev/urandom"
+CATALINA_OPTS="${CATALINA_OPTS} -Dfile.encoding=UTF-8"
+
+{% if tomcat_java_opts_extra | default('') | length > 0 %}
+# --- User-defined extra options ---
+CATALINA_OPTS="${CATALINA_OPTS} {{ tomcat_java_opts_extra }}"
+{% endif %}
+
+{% if tomcat_enable_gc_logging | bool %}
+# --- GC Logging (JVM 11+ Unified Logging) ---
+CATALINA_OPTS="${CATALINA_OPTS} {{ tomcat_gc_log_opts }}"
+{% endif %}
+
+{% if tomcat_enable_jmx | bool %}
+# --- JMX Remote Monitoring ---
+CATALINA_OPTS="${CATALINA_OPTS} -Dcom.sun.management.jmxremote"
+CATALINA_OPTS="${CATALINA_OPTS} -Dcom.sun.management.jmxremote.port={{ tomcat_jmx_port }}"
+CATALINA_OPTS="${CATALINA_OPTS} -Dcom.sun.management.jmxremote.rmi.port={{ tomcat_jmx_rmi_port }}"
+CATALINA_OPTS="${CATALINA_OPTS} -Dcom.sun.management.jmxremote.ssl=false"
+CATALINA_OPTS="${CATALINA_OPTS} -Dcom.sun.management.jmxremote.authenticate=true"
+CATALINA_OPTS="${CATALINA_OPTS} -Dcom.sun.management.jmxremote.access.file={{ tomcat_jmx_access_file }}"
+CATALINA_OPTS="${CATALINA_OPTS} -Dcom.sun.management.jmxremote.password.file={{ tomcat_jmx_password_file }}"
+CATALINA_OPTS="${CATALINA_OPTS} -Djava.rmi.server.hostname={{ tomcat_jmx_address }}"
+{% endif %}
+
+export CATALINA_OPTS

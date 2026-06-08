@@ -1,0 +1,22 @@
+---
+# =============================================================================
+# Ansible Role: Apache Tomcat - Tasks: Sudoers
+# =============================================================================
+# Configures sudoers drop-in file for the CI/CD deployer user, allowing
+# passwordless Tomcat service restart only. Validated with visudo.
+# =============================================================================
+
+- name: Tomcat | sudoers | Configure deployer sudoers for Tomcat restart
+  become: true
+  ansible.builtin.copy:
+    content: |
+      # Managed by Ansible - DO NOT EDIT
+      # Allow {{ tomcat_deployer_user }} to restart Tomcat service without password
+      {{ tomcat_deployer_user }} ALL=(root) NOPASSWD: /usr/bin/systemctl restart {{ tomcat_service_name }}
+    dest: "/etc/sudoers.d/{{ tomcat_deployer_sudoers_filename }}"
+    owner: root
+    group: root
+    mode: "0440"
+    validate: "visudo -cf %s"
+  when:
+    - tomcat_enable_cicd | bool

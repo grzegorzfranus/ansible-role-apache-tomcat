@@ -1,0 +1,383 @@
+---
+# =============================================================================
+# Ansible Role: Apache Tomcat - Default Variables
+# =============================================================================
+# This file defines default configuration values for the Apache Tomcat role.
+# These values can be overridden by setting them in your playbook or inventory.
+#
+# Supported OS distributions:
+# - EL9: Rocky Linux 9, RHEL 9, AlmaLinux 9, CentOS Stream 9
+#
+# Sections:
+#   1. General Settings
+#   2. Users & Groups
+#   3. CI/CD Deployer
+#   4. Paths
+#   5. Download
+#   6. Java
+#   7. JVM & CATALINA_OPTS
+#   8. Network & SSL
+#   9. SSL Keystore
+#   10. JMX
+#   11. Hardening
+#   12. Systemd
+#   13. Logrotate
+#   14. Upgrade
+# =============================================================================
+
+# -----------------------------------------------------------------------------
+# 1. General Settings
+# -----------------------------------------------------------------------------
+# Core version settings for Apache Tomcat
+
+# Version of Apache Tomcat to download and install
+tomcat_version: "9.0.118"
+
+# Major version number used to construct the Apache Archive download URL
+tomcat_major_version: "9"
+
+# -----------------------------------------------------------------------------
+# 2. Users & Groups
+# -----------------------------------------------------------------------------
+# System user and group for the Tomcat service process (Least Privilege)
+
+# Name of the system user that runs the Tomcat process (shell: /sbin/nologin)
+tomcat_user: "tomcat"
+
+# Name of the system group for the Tomcat process
+tomcat_group: "tomcat"
+
+# UID for the Tomcat system user (set to a fixed value for consistency)
+tomcat_uid: 900
+
+# GID for the Tomcat system group (set to a fixed value for consistency)
+tomcat_gid: 900
+
+# -----------------------------------------------------------------------------
+# 3. CI/CD Deployer
+# -----------------------------------------------------------------------------
+# Optional deployment user for CI/CD pipelines (disabled by default)
+
+# Enable creation of a dedicated deployment user with SSH keys and sudoers
+tomcat_enable_cicd: false
+
+# Name of the deployment user
+tomcat_deployer_user: "deployer"
+
+# UID for the deployment user
+tomcat_deployer_uid: 901
+
+# List of public SSH keys to add to the deployer's authorized_keys
+# Example:
+#   tomcat_deployer_ssh_keys:
+#     - "ssh-rsa AAAAB3... deployer@ci-server"
+tomcat_deployer_ssh_keys: []
+
+# Filename for the sudoers drop-in file in /etc/sudoers.d/
+tomcat_deployer_sudoers_filename: "tomcat-deployer"
+
+# -----------------------------------------------------------------------------
+# 4. Paths
+# -----------------------------------------------------------------------------
+# Directory layout for Split Tomcat architecture (CATALINA_HOME / CATALINA_BASE)
+
+# Parent directory for all Tomcat files (binaries, instance, symlink)
+tomcat_install_dir: "/opt/tomcat"
+
+# Full path to the binary distribution directory (CATALINA_HOME)
+# Owned by root:root with read/execute permissions for the Tomcat user
+tomcat_catalina_home: "{{ tomcat_install_dir }}/apache-tomcat-{{ tomcat_version }}"
+
+# Path to the symlink pointing to the current Tomcat version (easy upgrades)
+tomcat_symlink_path: "{{ tomcat_install_dir }}/current"
+
+# Full path to the instance data directory (CATALINA_BASE)
+# Contains conf, webapps, temp, work, and logs symlink
+tomcat_catalina_base: "{{ tomcat_install_dir }}/instance"
+
+# Dedicated log directory for Tomcat (outside CATALINA_BASE for security)
+tomcat_log_dir: "/var/log/tomcat"
+
+# -----------------------------------------------------------------------------
+# 5. Download
+# -----------------------------------------------------------------------------
+# Archive download settings (supports custom internal repos and Apache Archive)
+
+# Full URL to a custom .tar.gz archive (e.g. Nexus/Artifactory)
+# Leave empty to automatically build URL from archive.apache.org
+tomcat_custom_download_url: ""
+
+# Optional checksum for the downloaded archive (format: "sha512:HASH")
+# Leave empty to skip checksum verification
+tomcat_download_checksum: ""
+
+# Download timeout in seconds
+tomcat_download_timeout: 60
+
+# Temporary directory for the downloaded archive on the target host
+tomcat_download_tmp_dir: "/tmp"
+
+# -----------------------------------------------------------------------------
+# 6. Java
+# -----------------------------------------------------------------------------
+# Java runtime configuration (the role does NOT install Java)
+
+# Path to JAVA_HOME on the target host (must exist before role execution)
+# The role requires a pre-installed JDK/JRE managed by a separate role or process
+# Leave empty ("") to auto-detect JAVA_HOME at runtime via 'readlink -f $(which java)'
+tomcat_java_home: ""
+
+# -----------------------------------------------------------------------------
+# 7. JVM & CATALINA_OPTS
+# -----------------------------------------------------------------------------
+# JVM tuning parameters and CATALINA_OPTS flags
+
+# Minimum JVM heap size (-Xms)
+tomcat_jvm_heap_min: "512m"
+
+# Maximum JVM heap size (-Xmx)
+tomcat_jvm_heap_max: "1024m"
+
+# Maximum JVM Metaspace size (-XX:MaxMetaspaceSize)
+tomcat_jvm_metaspace_max: "256m"
+
+# Additional JVM options appended to CATALINA_OPTS
+# Use this to pass application-specific flags without overriding the base JVM config
+# Example: "-Dspring.profiles.active=prod -Dapp.feature.x=true"
+tomcat_java_opts_extra: ""
+
+# Enable JVM Garbage Collection logging (JVM 11+ Unified Logging)
+tomcat_enable_gc_logging: false
+
+# GC logging options appended to CATALINA_OPTS when tomcat_enable_gc_logging is true
+# Uses JVM 11+ Unified Logging syntax (-Xlog). Rotation is handled by logrotate.
+tomcat_gc_log_opts: >-
+  -Xlog:gc*:file={{ tomcat_log_dir }}/gc.log:time,uptime,level,tags
+
+# -----------------------------------------------------------------------------
+# 8. Network & SSL
+# -----------------------------------------------------------------------------
+# Connector and network configuration
+
+# Enable SSL/HTTPS connector and keystore management.
+# When false: no HTTPS connector, no keystore generated/copied, force_https ignored.
+# Set to false when Tomcat runs behind a reverse proxy that handles SSL termination.
+tomcat_enable_ssl: true
+
+# HTTPS connector listening port
+tomcat_https_port: 8443
+
+# HTTPS connector listen address (0.0.0.0 = all interfaces)
+tomcat_https_address: "0.0.0.0"
+
+# Shutdown port (-1 disables the shutdown port for security)
+tomcat_shutdown_port: -1
+
+# Enable the HTTP connector (disabled by default for reverse proxy setups)
+tomcat_enable_http: false
+
+# HTTP connector port (used only when tomcat_enable_http is true)
+tomcat_http_port: 8080
+
+# HTTP connector listen address (0.0.0.0 = all interfaces)
+# Consider 127.0.0.1 when behind a local reverse proxy for security
+tomcat_http_address: "0.0.0.0"
+
+# Enable the AJP connector (disabled by default)
+tomcat_enable_ajp: false
+
+# AJP connector port (used only when tomcat_enable_ajp is true)
+tomcat_ajp_port: 8009
+
+# AJP connector listen address (127.0.0.1 = localhost only, recommended for security)
+tomcat_ajp_address: "127.0.0.1"
+
+# Value of the server attribute in HTTPS connector (hides Tomcat version)
+tomcat_server_header: "AppServer"
+
+# Maximum worker threads per connector (controls concurrency, prevents DoS)
+tomcat_connector_max_threads: 200
+
+# Connection timeout in milliseconds (closes idle connections, mitigates slowloris)
+tomcat_connector_connection_timeout: 20000
+
+# Disable DNS reverse lookups on incoming requests (performance + security)
+tomcat_connector_enable_lookups: false
+
+# URI encoding for request URLs (explicit setting for clarity)
+tomcat_connector_uri_encoding: "UTF-8"
+
+# Deploy applications found in webapps/ on startup (false = controlled deploy only)
+tomcat_deploy_on_startup: false
+
+# Whether AJP connector requires a secret (recommended: true for CVE-2020-1938 protection)
+tomcat_ajp_secret_required: true
+
+# AJP connector secret (override with Ansible Vault in production!)
+tomcat_ajp_secret: ""
+
+# Force HTTP to HTTPS redirect via RewriteValve at Host level (301 redirect)
+# Active only when tomcat_enable_ssl and tomcat_enable_http are both true
+tomcat_force_https: true
+
+# --- Reverse Proxy ---
+
+# Enable RemoteIpValve for Tomcat behind a reverse proxy (Nginx, Caddy, HAProxy)
+# When enabled, Tomcat uses X-Forwarded-For/X-Forwarded-Proto headers to determine
+# the real client IP and protocol. Access logs will show the actual client IP.
+tomcat_behind_proxy: false
+
+# Regex of trusted internal proxy IP addresses (Java regex, dots must be escaped)
+# Default covers common private ranges. Override with your proxy's actual IP for security.
+# WARNING: An overly permissive regex allows clients to spoof X-Forwarded-For headers.
+tomcat_proxy_internal_proxies: >-
+  127\.0\.0\.1|::1|10\.\d{1,3}\.\d{1,3}\.\d{1,3}|192\.168\.\d{1,3}\.\d{1,3}|172\.(1[6-9]|2\d|3[01])\.\d{1,3}\.\d{1,3}
+
+# HTTP header containing the original client IP (set by the reverse proxy)
+tomcat_proxy_remote_ip_header: "X-Forwarded-For"
+
+# HTTP header containing the original protocol (http/https, set by the reverse proxy)
+tomcat_proxy_protocol_header: "X-Forwarded-Proto"
+
+# -----------------------------------------------------------------------------
+# 9. SSL Keystore
+# -----------------------------------------------------------------------------
+# PKCS12 keystore configuration for HTTPS connector
+
+# Destination path for the keystore file on the target server
+tomcat_ssl_keystore_file: "{{ tomcat_catalina_base }}/conf/keystore.p12"
+
+# Keystore password (override with Ansible Vault in production!)
+tomcat_ssl_keystore_password: "changeit"
+
+# Keystore type (PKCS12 recommended over JKS)
+tomcat_ssl_keystore_type: "PKCS12"
+
+# Key alias within the keystore
+tomcat_ssl_key_alias: "tomcat"
+
+# SSL protocol
+tomcat_ssl_protocol: "TLS"
+
+# Allowed TLS protocol versions
+tomcat_ssl_enabled_protocols: "TLSv1.2+TLSv1.3"
+
+# Strong cipher suite for TLS 1.2 connections (OpenSSL naming)
+# TLS 1.3 ciphers are managed automatically by the JVM — do not include them here
+tomcat_ssl_ciphers: >-
+  ECDHE-ECDSA-AES256-GCM-SHA384:ECDHE-RSA-AES256-GCM-SHA384:
+  ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES128-GCM-SHA256
+
+# Path on the Ansible control node to a custom keystore file (.p12)
+# If provided, the role copies this file to tomcat_ssl_keystore_file
+# If empty, the role generates a self-signed keystore (when enabled)
+tomcat_ssl_keystore_src: ""
+
+# Generate a self-signed PKCS12 keystore when no custom keystore is provided
+# Uses keytool on the target host (requires Java to be installed)
+tomcat_ssl_generate_self_signed: true
+
+# Distinguished Name (DN) for the self-signed certificate
+tomcat_ssl_self_signed_dname: "CN=localhost,OU=IT,O=Organization,L=City,ST=State,C=US"
+
+# Validity period of the self-signed certificate in days
+tomcat_ssl_self_signed_validity: 365
+
+# -----------------------------------------------------------------------------
+# 10. JMX
+# -----------------------------------------------------------------------------
+# Java Management Extensions (JMX) monitoring configuration
+
+# Enable secured JMX remote monitoring
+tomcat_enable_jmx: false
+
+# JMX registry port
+tomcat_jmx_port: 9090
+
+# JMX RMI server port
+tomcat_jmx_rmi_port: 9091
+
+# JMX RMI server hostname / listen address (localhost = local monitoring only)
+tomcat_jmx_address: "localhost"
+
+# JMX role name (readonly or readwrite)
+tomcat_jmx_role: "readonly"
+
+# JMX password (override with Ansible Vault in production!)
+tomcat_jmx_password: "changeit"
+
+# Path to the JMX access file on the target server
+tomcat_jmx_access_file: "{{ tomcat_catalina_base }}/conf/jmxremote.access"
+
+# Path to the JMX password file on the target server
+tomcat_jmx_password_file: "{{ tomcat_catalina_base }}/conf/jmxremote.password"
+
+# -----------------------------------------------------------------------------
+# 11. Hardening
+# -----------------------------------------------------------------------------
+# Security hardening options (enabled by default)
+
+# Enable security hardening (remove default apps, disable autoDeploy/unpackWARs)
+tomcat_enable_hardening: true
+
+# List of default Tomcat applications to remove from CATALINA_HOME/webapps/
+tomcat_default_apps_to_remove:
+  - "ROOT"
+  - "manager"
+  - "host-manager"
+  - "docs"
+  - "examples"
+
+# Disable WAR file unpacking in the Host element of server.xml
+tomcat_unpack_wars: false
+
+# Disable automatic deployment scanning in the Host element of server.xml
+tomcat_auto_deploy: false
+
+# -----------------------------------------------------------------------------
+# 12. Systemd
+# -----------------------------------------------------------------------------
+# Systemd service configuration with kernel-level hardening
+
+# Name of the systemd service unit
+tomcat_service_name: "tomcat"
+
+# Enable automatic service start on system boot
+tomcat_service_enabled: true
+
+# Maximum number of open file descriptors for the Tomcat process (LimitNOFILE)
+tomcat_systemd_limit_nofile: 65536
+
+# Delay in seconds before restarting the service after a failure (RestartSec)
+tomcat_systemd_restart_sec: 10
+
+# -----------------------------------------------------------------------------
+# 13. Logrotate
+# -----------------------------------------------------------------------------
+# Log rotation settings for Tomcat text log files
+
+# Whether to configure logrotate for Tomcat logs
+tomcat_configure_logrotate: true
+
+tomcat_logrotate_options:
+  archive_directory_path: "/var/log/tomcat/archive"
+  frequency: "daily"
+  count: 14
+  missingok: true
+  compress: true
+  nocreate: true
+  copytruncate: true
+  dateext: true
+
+# -----------------------------------------------------------------------------
+# 14. Upgrade
+# -----------------------------------------------------------------------------
+# Maintenance settings for version management during Tomcat upgrades
+
+# Whether to clean up old Tomcat versions from CATALINA_HOME after upgrade
+tomcat_cleanup_old_versions: false
+
+# Number of previous Tomcat versions to keep in CATALINA_HOME
+# Only applies when tomcat_cleanup_old_versions is true
+# The current version is always kept — this value controls how many OLD versions remain
+tomcat_keep_old_versions: 3

@@ -1,0 +1,23 @@
+#jinja2: trim_blocks: True, lstrip_blocks: True
+# {{ ansible_managed }}
+#
+# =============================================================================
+# Apache Tomcat {{ tomcat_version }} - Rewrite Configuration
+# =============================================================================
+# Host-level rewrite rules applied via RewriteValve.
+# Works regardless of deployed web applications.
+# =============================================================================
+
+{% if tomcat_enable_hardening | bool %}
+# --- Block dangerous HTTP methods (CONNECT, TRACE, TRACK) ---
+# CONNECT: proxy tunneling (Tomcat is not a proxy)
+# TRACE/TRACK: cross-site tracing attacks (defense-in-depth with allowTrace=false)
+RewriteCond %{REQUEST_METHOD} ^(CONNECT|TRACE|TRACK)$ [NC]
+RewriteRule .* - [F,L]
+
+{% endif %}
+{% if tomcat_enable_ssl | bool and tomcat_force_https | default(true) | bool and tomcat_enable_http | bool %}
+# --- Force HTTP to HTTPS redirect (301 Permanent) ---
+RewriteCond %{HTTPS} !on
+RewriteRule ^(.*)$ https://%{HTTP_HOST}:{{ tomcat_https_port }}%{REQUEST_URI} [R=301,L]
+{% endif %}

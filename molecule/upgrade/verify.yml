@@ -1,0 +1,113 @@
+---
+# Apache Tomcat Molecule — Verify upgrade scenario results.
+
+- name: Molecule | Verify Upgrade
+  hosts: all
+  gather_facts: true
+
+  vars:
+    tomcat_old_version: "9.0.117"
+    tomcat_new_version: "9.0.118"
+    tomcat_install_dir: "/opt/tomcat"
+    tomcat_catalina_base: "{{ tomcat_install_dir }}/instance"
+
+  tasks:
+    # --- Symlink verification ---
+    - name: Verify | Check version symlink points to new version
+      ansible.builtin.stat:
+        path: "{{ tomcat_install_dir }}/current"
+      register: __verify_symlink
+
+    - name: Verify | Assert symlink points to new CATALINA_HOME
+      ansible.builtin.assert:
+        that:
+          - __verify_symlink.stat.exists
+          - __verify_symlink.stat.islnk
+          - __verify_symlink.stat.lnk_target == tomcat_install_dir ~ '/apache-tomcat-' ~ tomcat_new_version
+        fail_msg: >-
+          Symlink does not point to new version.
+          Expected: {{ tomcat_install_dir }}/apache-tomcat-{{ tomcat_new_version }},
+          Got: {{ __verify_symlink.stat.lnk_target | default('N/A') }}
+        success_msg: "Symlink correctly points to {{ tomcat_new_version }}"
+
+    # --- New CATALINA_HOME verification ---
+    - name: Verify | Check new CATALINA_HOME exists
+      ansible.builtin.stat:
+        path: "{{ tomcat_install_dir }}/apache-tomcat-{{ tomcat_new_version }}/bin/catalina.sh"
+      register: __verify_new_home
+
+    - name: Verify | Assert new CATALINA_HOME exists
+      ansible.builtin.assert:
+        that:
+          - __verify_new_home.stat.exists
+        fail_msg: "New CATALINA_HOME binary not found"
+        success_msg: "New CATALINA_HOME verified ({{ tomcat_new_version }})"
+
+    # --- Old CATALINA_HOME verification (rollback ready) ---
+    - name: Verify | Check old CATALINA_HOME still exists (rollback)
+      ansible.builtin.stat:
+        path: "{{ tomcat_install_dir }}/apache-tomcat-{{ tomcat_old_version }}/bin/catalina.sh"
+      register: __verify_old_home
+
+    - name: Verify | Assert old CATALINA_HOME preserved for rollback
+      ansible.builtin.assert:
+        that:
+          - __verify_old_home.stat.exists
+        fail_msg: "Old CATALINA_HOME was deleted (rollback impossible)"
+        success_msg: "Old CATALINA_HOME preserved ({{ tomcat_old_version }})"
+
+    # --- Webapp survival verification ---
+    - name: Verify | Check dummy webapp marker survived upgrade
+      ansible.builtin.stat:
+        path: "{{ tomcat_catalina_base }}/webapps/test-app.marker"
+      register: __verify_webapp_marker
+
+    - name: Verify | Assert webapp data survived upgrade
+      ansible.builtin.assert:
+        that:
+          - __verify_webapp_marker.stat.exists
+        fail_msg: "Webapp marker was lost during upgrade (CATALINA_BASE modified)"
+        success_msg: "Webapp data survived upgrade (CATALINA_BASE preserved)"
+
+    - name: Verify | Read dummy webapp marker content
+      ansible.builtin.slurp:
+        src: "{{ tomcat_catalina_base }}/webapps/test-app.marker"
+      register: __verify_marker_content
+
+    - name: Verify | Assert webapp marker content unchanged
+      ansible.builtin.assert:
+        that:
+          - (__verify_marker_content.content | b64decode) == 'upgrade-test-marker'
+        fail_msg: "Webapp marker content was modified during upgrade"
+        success_msg: "Webapp marker content verified"
+
+    # --- Keystore survival verification ---
+    - name: Verify | Check keystore survived upgrade
+      ansible.builtin.stat:
+        path: "{{ tomcat_catalina_base }}/conf/keystore.p12"
+      register: __verify_keystore
+
+    - name: Verify | Assert keystore exists after upgrade
+      ansible.builtin.assert:
+        that:
+          - __verify_keystore.stat.exists
+          - __verify_keystore.stat.mode == '0640'
+        fail_msg: "Keystore was lost or permissions changed during upgrade"
+        success_msg: "Keystore survived upgrade"
+
+    # --- Config freshness verification ---
+    - name: Verify | Read server.xml content
+      ansible.builtin.slurp:
+        src: "{{ tomcat_catalina_base }}/conf/server.xml"
+      register: __verify_server_xml_content
+
+    - name: Verify | Assert server.xml contains new version
+      ansible.builtin.assert:
+        that:
+          - "tomcat_new_version in (__verify_server_xml_content.content | b64decode)"
+        fail_msg: "server.xml does not reference new version {{ tomcat_new_version }}"
+        success_msg: "server.xml updated to {{ tomcat_new_version }}"
+
+    - name: Verify | All upgrade checks completed successfully
+      ansible.builtin.debug:
+        msg: "All Apache Tomcat upgrade scenario verification checks passed"
