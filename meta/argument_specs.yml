@@ -519,9 +519,9 @@ argument_specs:
       tomcat_cleanup_old_versions:
         description: "Remove old Tomcat versions from installation directory after upgrade"
         type: bool
-        default: false
+        default: true
 
       tomcat_keep_old_versions:
         description: "Number of previous Tomcat versions to keep in installation directory (current version always kept)"
         type: int
-        default: 3
+        default: 2

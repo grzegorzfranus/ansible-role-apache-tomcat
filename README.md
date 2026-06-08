@@ -355,8 +355,8 @@ tomcat_enable_ajp: false
 
 | Variable                      | Description                                                                                                                                         | Default |
 | ----------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------- | ------- |
-| `tomcat_cleanup_old_versions` | Remove old Tomcat versions from installation directory after upgrade. Current version is always kept.                                               | `false` |
-| `tomcat_keep_old_versions`    | Number of previous Tomcat versions to keep in the installation directory for rollback. Only effective when `tomcat_cleanup_old_versions` is `true`. | `3`     |
+| `tomcat_cleanup_old_versions` | Remove old Tomcat versions from installation directory after upgrade. Current version is always kept.                                               | `true`  |
+| `tomcat_keep_old_versions`    | Number of previous Tomcat versions to keep in the installation directory for rollback. Only effective when `tomcat_cleanup_old_versions` is `true`. | `2`     |
 
 ## 📌 Role Properties
 

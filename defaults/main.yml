@@ -385,9 +385,9 @@ tomcat_logrotate_options:
 # Maintenance settings for version management during Tomcat upgrades
 
 # Whether to clean up old Tomcat versions from CATALINA_HOME after upgrade
-tomcat_cleanup_old_versions: false
+tomcat_cleanup_old_versions: true
 
 # Number of previous Tomcat versions to keep in CATALINA_HOME
 # Only applies when tomcat_cleanup_old_versions is true
 # The current version is always kept — this value controls how many OLD versions remain
-tomcat_keep_old_versions: 3
+tomcat_keep_old_versions: 2
