@@ -24,6 +24,7 @@ This Ansible role deploys Apache Tomcat using the **Enterprise Split Tomcat** ar
 - ☕ **Upgrade-Safe JAVA_HOME**: Runtime auto-detection via `readlink` — survives OpenJDK package upgrades without re-running Ansible
 - ✅ **Full Parameterization**: Every value configurable through variables — zero hardcoded paths, ports, or credentials
 - 🧹 **Optional Old Version Cleanup**: Automatic removal of outdated CATALINA_HOME directories with configurable retention count (`tomcat_keep_old_versions`) for controlled disk usage after upgrades
+- 🏛️ **CIS Benchmark Compliance**: JVM security properties (RECYCLE_FACADES, STRICT_SERVLET_COMPLIANCE), configurable LockOutRealm, and managed `logging.properties` aligned with CIS Apache Tomcat 9 Benchmark v1.2
 
 ## 🎯 Architecture
 
@@ -320,10 +321,12 @@ tomcat_enable_ajp: false
 
 | Variable                        | Description                                                | Default                                                   |
 | ------------------------------- | ---------------------------------------------------------- | --------------------------------------------------------- |
-| `tomcat_enable_hardening`       | Enable security hardening                                  | `true`                                                    |
-| `tomcat_default_apps_to_remove` | List of default apps to remove from CATALINA_HOME/webapps/ | `["ROOT", "manager", "host-manager", "docs", "examples"]` |
-| `tomcat_unpack_wars`            | `unpackWARs` attribute in the Host element of server.xml   | `false`                                                   |
-| `tomcat_auto_deploy`            | `autoDeploy` attribute in the Host element of server.xml   | `false`                                                   |
+| `tomcat_enable_hardening`       | Enable security hardening                                              | `true`                                                    |
+| `tomcat_default_apps_to_remove` | List of default apps to remove from CATALINA_HOME/webapps/             | `["ROOT", "manager", "host-manager", "docs", "examples"]` |
+| `tomcat_unpack_wars`            | `unpackWARs` attribute in the Host element of server.xml               | `false`                                                   |
+| `tomcat_auto_deploy`            | `autoDeploy` attribute in the Host element of server.xml               | `false`                                                   |
+| `tomcat_lockout_failure_count`  | Max consecutive failed auth attempts before lockout (CIS 5.2)          | `5`                                                       |
+| `tomcat_lockout_time`           | Lockout duration in seconds after exceeding failure count (CIS 5.2)    | `300`                                                     |
 
 ### Systemd
 
@@ -357,6 +360,14 @@ tomcat_enable_ajp: false
 | ----------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------- | ------- |
 | `tomcat_cleanup_old_versions` | Remove old Tomcat versions from installation directory after upgrade. Current version is always kept.                                               | `true`  |
 | `tomcat_keep_old_versions`    | Number of previous Tomcat versions to keep in the installation directory for rollback. Only effective when `tomcat_cleanup_old_versions` is `true`. | `2`     |
+
+### Logging
+
+| Variable                   | Description                                                                          | Default     |
+| -------------------------- | ------------------------------------------------------------------------------------ | ----------- |
+| `tomcat_configure_logging`  | Template a managed `logging.properties` into `CATALINA_BASE/conf/` (CIS 7.2)       | `true`      |
+| `tomcat_logging_level`      | Default log level for Tomcat internals (`SEVERE`/`WARNING`/`INFO`/`CONFIG`/`FINE`/`FINER`/`FINEST`) | `"WARNING"` |
+| `tomcat_logging_max_days`   | Days to keep rotated JULI log files (0 = unlimited)                                 | `14`        |
 
 ## 📌 Role Properties
 
@@ -508,6 +519,11 @@ The current version is **always preserved** — `tomcat_keep_old_versions` contr
 - ✅ **no_log**: Sensitive tasks (keystore generation, JMX files, SSH keys, AJP secret) use `no_log: true`
 - ✅ **Least Privilege Execution**: `become: true` only on tasks that require root
 - ✅ **Old Version Cleanup**: Optional disk cleanup of outdated CATALINA_HOME directories with configurable retention (`tomcat_keep_old_versions`)
+- ✅ **CIS 10.3 RECYCLE_FACADES**: Prevents request facade object reuse between requests (information leakage mitigation)
+- ✅ **CIS 10.4 STRICT_SERVLET_COMPLIANCE**: Enforces strict Servlet specification compliance
+- ✅ **CIS 10.5 Path Traversal Protection**: Explicitly blocks backslash and encoded slash path traversal
+- ✅ **CIS 5.2 LockOutRealm**: Configurable brute-force protection with `failureCount` and `lockOutTime`
+- ✅ **CIS 7.2 Managed Logging**: Production-hardened `logging.properties` with `AsyncFileHandler`, configurable log levels, and auto-cleanup via `maxDays`
 
 ### Uninstall
 
@@ -662,7 +678,7 @@ ansible-role-apache-tomcat/
 ├── README.md                          # This documentation
 ├── release-please-config.json         # Release Please configuration
 ├── defaults/
-│   └── main.yml                       # Default variables (14 sections)
+│   └── main.yml                       # Default variables (15 sections)
 ├── handlers/
 │   └── main.yml                       # Daemon-reload and service restart
 ├── meta/
@@ -704,10 +720,12 @@ ansible-role-apache-tomcat/
 │   ├── systemd/
 │   │   └── tomcat.service.j2         # Hardened systemd unit
 │   └── tomcat/
-│       ├── server.xml.j2             # Tomcat server configuration
-│       ├── setenv.sh.j2              # JVM options and JMX settings
-│       ├── tomcat-users.xml.j2       # User database (empty by default)
-│       └── web.xml.j2                # Global web.xml with error pages
+│       ├── logging.properties.j2      # JULI logging configuration (CIS 7.2)
+│       ├── rewrite.config.j2          # Rewrite rules (method blocking, HTTPS redirect)
+│       ├── server.xml.j2              # Tomcat server configuration
+│       ├── setenv.sh.j2               # JVM options and JMX settings
+│       ├── tomcat-users.xml.j2        # User database (empty by default)
+│       └── web.xml.j2                 # Global web.xml with error pages
 └── vars/
     └── main.yml                       # Internal variables (__tomcat_ prefix)
 ```

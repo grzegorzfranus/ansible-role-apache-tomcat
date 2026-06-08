@@ -410,6 +410,20 @@
   when:
     - tomcat_enable_hardening | bool
 
+- name: Tomcat | assert | Validate LockOutRealm settings
+  ansible.builtin.assert:
+    that:
+      - tomcat_lockout_failure_count is defined
+      - tomcat_lockout_failure_count | int >= 1
+      - tomcat_lockout_time is defined
+      - tomcat_lockout_time | int >= 1
+    fail_msg: >-
+      Invalid LockOutRealm settings. tomcat_lockout_failure_count must be >= 1,
+      tomcat_lockout_time must be >= 1 second.
+    success_msg: >-
+      LockOutRealm validated: failureCount={{ tomcat_lockout_failure_count }},
+      lockOutTime={{ tomcat_lockout_time }}s
+
 # --- Section 12: Systemd ---
 
 - name: Tomcat | assert | Validate systemd settings
@@ -489,3 +503,31 @@
     success_msg: >-
       Upgrade settings validated: cleanup={{ tomcat_cleanup_old_versions }},
       keep_old_versions={{ tomcat_keep_old_versions }}
+
+# --- Section 15: Logging ---
+
+- name: Tomcat | assert | Validate logging toggle
+  ansible.builtin.assert:
+    that:
+      - tomcat_configure_logging is defined
+      - tomcat_configure_logging | type_debug in ['bool', 'AnsibleUnsafeText', 'str']
+    fail_msg: "tomcat_configure_logging must be a boolean value."
+    success_msg: "Logging toggle validated: {{ tomcat_configure_logging }}"
+
+- name: Tomcat | assert | Validate logging settings
+  ansible.builtin.assert:
+    that:
+      - tomcat_logging_level is defined
+      - tomcat_logging_level is string
+      - tomcat_logging_level in ['SEVERE', 'WARNING', 'INFO', 'CONFIG', 'FINE', 'FINER', 'FINEST']
+      - tomcat_logging_max_days is defined
+      - tomcat_logging_max_days | int >= 0
+    fail_msg: >-
+      Invalid logging settings. tomcat_logging_level must be a valid JULI level
+      (SEVERE/WARNING/INFO/CONFIG/FINE/FINER/FINEST).
+      tomcat_logging_max_days must be >= 0.
+    success_msg: >-
+      Logging settings validated: level={{ tomcat_logging_level }},
+      maxDays={{ tomcat_logging_max_days }}
+  when:
+    - tomcat_configure_logging | bool

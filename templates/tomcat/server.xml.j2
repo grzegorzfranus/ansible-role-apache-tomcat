@@ -92,7 +92,9 @@
     {% endif %}
     <Engine name="Catalina" defaultHost="localhost">
 
-      <Realm className="org.apache.catalina.realm.LockOutRealm">
+      <Realm className="org.apache.catalina.realm.LockOutRealm"
+             failureCount="{{ tomcat_lockout_failure_count }}"
+             lockOutTime="{{ tomcat_lockout_time }}">
         <Realm className="org.apache.catalina.realm.UserDatabaseRealm"
                resourceName="UserDatabase" />
       </Realm>
