@@ -129,7 +129,8 @@ jobs:
   publish-to-galaxy:
     name: "Publish to Galaxy"
     needs: [release-please]
-    if: needs.release-please.outputs.release_created == 'true'
+    # Temporarily disabled publishing to Galaxy
+    if: false
     uses: grzegorzfranus/github-actions-workflows/.github/workflows/ansible-publish-galaxy.yml@main
     secrets:
       galaxy-api-key: ${{ secrets.GALAXY_API_KEY }}

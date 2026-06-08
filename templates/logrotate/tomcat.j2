@@ -30,10 +30,10 @@
     {% endif %}
 }
 
-# Archive old access logs (self-rotated by AccessLogValve)
-# AccessLogValve creates dated files automatically. Logrotate moves them
-# to olddir and compresses them. No custom tar scripts needed.
-{{ tomcat_log_dir }}/access_log.*.log {
+# Archive old access logs
+{% if not tomcat_access_log_rotatable | bool %}
+# Logrotate rotates the single access_log.log file.
+{{ tomcat_log_dir }}/access_log.log {
     su {{ tomcat_user }} {{ tomcat_group }}
     {{ tomcat_logrotate_options.frequency }}
     rotate {{ tomcat_logrotate_options.count }}
@@ -41,6 +41,9 @@
     nocreate
     {% if tomcat_logrotate_options.compress %}
     compress
+    {% endif %}
+    {% if tomcat_logrotate_options.copytruncate %}
+    copytruncate
     {% endif %}
     {% if tomcat_logrotate_options.dateext %}
     dateext
@@ -50,6 +53,24 @@
     olddir {{ tomcat_logrotate_options.archive_directory_path }}
     {% endif %}
 }
+{% else %}
+# AccessLogValve creates dated files automatically. Logrotate moves them
+# to olddir and compresses them.
+{{ tomcat_log_dir }}/access_log.*.log {
+    su {{ tomcat_user }} {{ tomcat_group }}
+    {{ tomcat_logrotate_options.frequency }}
+    rotate {{ tomcat_logrotate_options.count }}
+    missingok
+    nocreate
+    {% if tomcat_logrotate_options.compress %}
+    compress
+    {% endif %}
+    # Avoid dateext here to prevent double dating if it's already dated
+    {% if tomcat_logrotate_options.archive_directory_path is defined and tomcat_logrotate_options.archive_directory_path | length > 0 %}
+    olddir {{ tomcat_logrotate_options.archive_directory_path }}
+    {% endif %}
+}
+{% endif %}
 
 {% if tomcat_enable_gc_logging | bool %}
 # GC log rotation (JVM keeps FD open, requires copytruncate)
@@ -67,6 +88,22 @@
     dateext
     dateformat .%Y-%m-%d
     {% endif %}
+    {% if tomcat_logrotate_options.archive_directory_path is defined and tomcat_logrotate_options.archive_directory_path | length > 0 %}
+    olddir {{ tomcat_logrotate_options.archive_directory_path }}
+    {% endif %}
+}
+
+# Archive natively-rotated JVM GC log files (gc.log.0, gc.log.1, etc.)
+{{ tomcat_log_dir }}/gc.log.[0-9]* {
+    su {{ tomcat_user }} {{ tomcat_group }}
+    {{ tomcat_logrotate_options.frequency }}
+    rotate {{ tomcat_logrotate_options.count }}
+    missingok
+    nocreate
+    {% if tomcat_logrotate_options.compress %}
+    compress
+    {% endif %}
+    # Avoid dateext here to prevent double dating if it's already dated
     {% if tomcat_logrotate_options.archive_directory_path is defined and tomcat_logrotate_options.archive_directory_path | length > 0 %}
     olddir {{ tomcat_logrotate_options.archive_directory_path }}
     {% endif %}

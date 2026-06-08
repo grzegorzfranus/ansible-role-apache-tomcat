@@ -23,6 +23,7 @@
     tomcat_enable_cicd: false
     tomcat_enable_jmx: false
     tomcat_ssl_generate_self_signed: true
+    tomcat_enable_gc_logging: true
 
   roles:
     - role: ../../..

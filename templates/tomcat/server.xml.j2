@@ -117,8 +117,12 @@
                prefix="access_log"
                suffix=".log"
                pattern="%h %l %u %t &quot;%r&quot; %s %b %D"
-               rotatable="true"
+               rotatable="{{ tomcat_access_log_rotatable | string | lower }}"
+               {% if not tomcat_access_log_rotatable | bool %}
+               checkExists="true"
+               {% else %}
                fileDateFormat=".yyyy-MM-dd"
+               {% endif %}
                {% if tomcat_behind_proxy | bool %}
                requestAttributesEnabled="true"
                {% endif %}
