@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.1](https://github.com/grzegorzfranus/ansible-role-apache-tomcat/compare/v0.2.0...v0.2.1) (2026-06-08)
+
+
+### Bug Fixes
+
+* add syslog.target to systemd After directive and update verifica… ([#3](https://github.com/grzegorzfranus/ansible-role-apache-tomcat/issues/3)) ([15e9aef](https://github.com/grzegorzfranus/ansible-role-apache-tomcat/commit/15e9aefc89dd3cfc422bba72fd0cc0d9a8209707))
+
 ## [0.2.0](https://github.com/grzegorzfranus/ansible-role-apache-tomcat/compare/v0.1.0...v0.2.0) (2026-06-08)
 
 
