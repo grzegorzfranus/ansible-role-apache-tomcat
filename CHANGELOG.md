@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.3.0](https://github.com/grzegorzfranus/ansible-role-apache-tomcat/compare/v0.2.2...v0.3.0) (2026-06-08)
+
+
+### Features
+
+* add CIS Tomcat Benchmark hardening controls ([#7](https://github.com/grzegorzfranus/ansible-role-apache-tomcat/issues/7)) ([1102d7a](https://github.com/grzegorzfranus/ansible-role-apache-tomcat/commit/1102d7a28a894e960414cb61cb35cb27c18fa6e1))
+
 ## [0.2.2](https://github.com/grzegorzfranus/ansible-role-apache-tomcat/compare/v0.2.1...v0.2.2) (2026-06-08)
 
 
