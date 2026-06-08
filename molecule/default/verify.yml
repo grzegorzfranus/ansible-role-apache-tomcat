@@ -244,8 +244,9 @@
         that:
           - "'StandardOutput=append:/var/log/tomcat/catalina.out' in (__verify_tomcat_service_content.content | b64decode)"
           - "'StandardError=append:/var/log/tomcat/catalina.out' in (__verify_tomcat_service_content.content | b64decode)"
-        fail_msg: "tomcat.service does not redirect StandardOutput/StandardError to catalina.out"
-        success_msg: "tomcat.service standard output/error redirection verified"
+          - "'After=network.target remote-fs.target nss-lookup.target syslog.target' in (__verify_tomcat_service_content.content | b64decode)"
+        fail_msg: "tomcat.service does not redirect StandardOutput/StandardError to catalina.out or is missing syslog.target in After"
+        success_msg: "tomcat.service standard output/error redirection and syslog.target verified"
 
     # --- server.xml AccessLogValve rotatable="false" verification ---
     - name: Verify | Read server.xml file

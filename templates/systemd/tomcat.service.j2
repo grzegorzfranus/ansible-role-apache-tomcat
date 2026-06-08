@@ -12,7 +12,7 @@
 [Unit]
 Description=Apache Tomcat Application Server
 Documentation=https://tomcat.apache.org/tomcat-{{ tomcat_major_version }}.0-doc/
-After=network.target remote-fs.target nss-lookup.target
+After=network.target remote-fs.target nss-lookup.target syslog.target
 
 [Service]
 Type=exec
