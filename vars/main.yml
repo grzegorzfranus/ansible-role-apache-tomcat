@@ -18,3 +18,7 @@ __tomcat_selinux_packages:
   - policycoreutils-python-utils
   - policycoreutils
   - checkpolicy
+__tomcat_selinux_policy_dir: "/etc/selinux/local"
+__tomcat_selinux_policy_te: "{{ __tomcat_selinux_policy_dir }}/tomcat_systemd.te"
+__tomcat_selinux_policy_mod: "{{ __tomcat_selinux_policy_dir }}/tomcat_systemd.mod"
+__tomcat_selinux_policy_pp: "{{ __tomcat_selinux_policy_dir }}/tomcat_systemd.pp"

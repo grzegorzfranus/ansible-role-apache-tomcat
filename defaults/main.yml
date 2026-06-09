@@ -360,14 +360,12 @@ tomcat_systemd_limit_nofile: 65536
 tomcat_systemd_restart_sec: 10
 
 # Destination for systemd standard output (stdout)
-# Default: journal (recommended for EL9 with SELinux enforcing)
-# Alternative: "append:{{ tomcat_log_dir }}/catalina.out" (requires custom SELinux policy)
-tomcat_systemd_standard_output: "journal"
+# The role installs a custom SELinux policy module to allow init_t writes to var_log_t.
+tomcat_systemd_standard_output: "append:{{ tomcat_log_dir }}/catalina.out"
 
 # Destination for systemd standard error (stderr)
-# Default: journal (recommended for EL9 with SELinux enforcing)
-# Alternative: "append:{{ tomcat_log_dir }}/catalina.out" (requires custom SELinux policy)
-tomcat_systemd_standard_error: "journal"
+# The role installs a custom SELinux policy module to allow init_t writes to var_log_t.
+tomcat_systemd_standard_error: "append:{{ tomcat_log_dir }}/catalina.out"
 
 # -----------------------------------------------------------------------------
 # 13. Logrotate
