@@ -59,6 +59,16 @@
     - configure
     - setup
 
+- name: Tomcat | selinux | Configure SELinux contexts
+  ansible.builtin.include_tasks: selinux.yml
+  when:
+    - ansible_facts['os_family'] == 'RedHat'
+    - ansible_facts['selinux']['status'] == 'enabled'
+  tags:
+    - configure
+    - setup
+    - selinux
+
 - name: Tomcat | systemd | Configure systemd service
   ansible.builtin.include_tasks: systemd.yml
   tags:

@@ -360,9 +360,11 @@ tomcat_systemd_limit_nofile: 65536
 tomcat_systemd_restart_sec: 10
 
 # Destination for systemd standard output (stdout)
+# The role installs a custom SELinux policy module to allow init_t writes to var_log_t.
 tomcat_systemd_standard_output: "append:{{ tomcat_log_dir }}/catalina.out"
 
 # Destination for systemd standard error (stderr)
+# The role installs a custom SELinux policy module to allow init_t writes to var_log_t.
 tomcat_systemd_standard_error: "append:{{ tomcat_log_dir }}/catalina.out"
 
 # -----------------------------------------------------------------------------
@@ -412,9 +414,9 @@ tomcat_keep_old_versions: 2
 tomcat_configure_logging: true
 
 # Default log level for Tomcat internal components
-# Recommended: WARNING for production (reduces noise), INFO for debugging
+# Recommended: INFO for standard operation, WARNING for reduced noise in production
 # Valid values: SEVERE, WARNING, INFO, CONFIG, FINE, FINER, FINEST
-tomcat_logging_level: "WARNING"
+tomcat_logging_level: "INFO"
 
 # Number of days to keep rotated JULI log files before deletion
 # Set to 0 for unlimited retention (not recommended)

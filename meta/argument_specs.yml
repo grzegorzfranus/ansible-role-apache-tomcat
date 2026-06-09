@@ -547,7 +547,7 @@ argument_specs:
       tomcat_logging_level:
         description: "Default log level for Tomcat internal components"
         type: str
-        default: "WARNING"
+        default: "INFO"
         choices:
           - SEVERE
           - WARNING
