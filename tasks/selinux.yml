@@ -22,6 +22,29 @@
     group: root
     mode: "0755"
 
+# Remove incorrect sefcontext rules applied by earlier role versions.
+# These must be removed BEFORE restorecon so that var_log_t is restored correctly.
+- name: Tomcat | selinux | Remove incorrect tomcat_log_t context from log directory
+  become: true
+  community.general.sefcontext:
+    target: "{{ tomcat_log_dir }}(/.*)?"
+    setype: tomcat_log_t
+    state: absent
+
+- name: Tomcat | selinux | Remove incorrect tomcat_var_lib_t context from install directory
+  become: true
+  community.general.sefcontext:
+    target: "{{ tomcat_install_dir }}(/.*)?"
+    setype: tomcat_var_lib_t
+    state: absent
+
+- name: Tomcat | selinux | Remove incorrect tomcat_exec_t context from catalina.sh
+  become: true
+  community.general.sefcontext:
+    target: "{{ tomcat_symlink_path }}/bin/catalina\\.sh"
+    setype: tomcat_exec_t
+    state: absent
+
 # Justification: Use command module because restorecon (SELinux context restore)
 # has no native Ansible module. Ensures log directory inherits correct var_log_t
 # context from /var/log/ parent after any prior incorrect labeling.
@@ -47,28 +70,33 @@
     src: selinux/tomcat_systemd.te.j2
     dest: "{{ __tomcat_selinux_policy_te }}"
     mode: "0644"
+  register: __tomcat_selinux_policy_te_result
 
 # Justification: Use command module because checkmodule (SELinux policy compiler)
 # has no native Ansible module. Compiles .te source into binary .mod module.
-- name: Tomcat | selinux | Compile custom SELinux policy module
+- name: Tomcat | selinux | Compile custom SELinux policy module # noqa: no-handler
   become: true
   ansible.builtin.command:
     cmd: "checkmodule -M -m -o {{ __tomcat_selinux_policy_mod }} {{ __tomcat_selinux_policy_te }}"
-    creates: "{{ __tomcat_selinux_policy_mod }}"
+  when: __tomcat_selinux_policy_te_result is changed
+  changed_when: true
 
 # Justification: Use command module because semodule_package (SELinux packaging)
 # has no native Ansible module. Packages compiled module into installable .pp.
-- name: Tomcat | selinux | Package custom SELinux policy module
+- name: Tomcat | selinux | Package custom SELinux policy module # noqa: no-handler
   become: true
   ansible.builtin.command:
     cmd: "semodule_package -o {{ __tomcat_selinux_policy_pp }} -m {{ __tomcat_selinux_policy_mod }}"
-    creates: "{{ __tomcat_selinux_policy_pp }}"
+  when: __tomcat_selinux_policy_te_result is changed
+  changed_when: true
 
 # Justification: Use command module because semodule (SELinux module management)
 # has no native Ansible module. Installs the policy at priority 300 (custom).
-# The semodule command is idempotent — reinstalling the same module is a no-op.
-- name: Tomcat | selinux | Load custom SELinux policy module
+- name: Tomcat | selinux | Load custom SELinux policy module # noqa: no-handler
   become: true
   ansible.builtin.command:
     cmd: "semodule -X 300 -i {{ __tomcat_selinux_policy_pp }}"
-  changed_when: false
+  when: __tomcat_selinux_policy_te_result is changed
+  changed_when: true
+  notify:
+    - Tomcat | handlers | Restart Tomcat service
