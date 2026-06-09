@@ -1,0 +1,44 @@
+---
+# =============================================================================
+# Ansible Role: Apache Tomcat - Tasks: SELinux
+# =============================================================================
+# Configures SELinux file contexts for Tomcat directories and logs so that
+# systemd can write stdout/stderr to log files under enforcing mode.
+# Runs only on RedHat-family systems with SELinux enabled.
+# =============================================================================
+
+- name: Tomcat | selinux | Install SELinux management packages
+  become: true
+  ansible.builtin.dnf:
+    name: "{{ __tomcat_selinux_packages }}"
+    state: present
+
+- name: Tomcat | selinux | Set SELinux file context for log directory
+  become: true
+  community.general.sefcontext:
+    target: "{{ tomcat_log_dir }}(/.*)?"
+    setype: tomcat_log_t
+    state: present
+  notify:
+    - Tomcat | handlers | Restore SELinux contexts
+
+- name: Tomcat | selinux | Set SELinux file context for CATALINA_HOME
+  become: true
+  community.general.sefcontext:
+    target: "{{ tomcat_install_dir }}(/.*)?"
+    setype: tomcat_var_lib_t
+    state: present
+  notify:
+    - Tomcat | handlers | Restore SELinux contexts
+
+- name: Tomcat | selinux | Set SELinux file context for catalina.sh
+  become: true
+  community.general.sefcontext:
+    target: "{{ tomcat_symlink_path }}/bin/catalina\\.sh"
+    setype: tomcat_exec_t
+    state: present
+  notify:
+    - Tomcat | handlers | Restore SELinux contexts
+
+- name: Tomcat | selinux | Flush handlers to apply contexts before service start
+  ansible.builtin.meta: flush_handlers

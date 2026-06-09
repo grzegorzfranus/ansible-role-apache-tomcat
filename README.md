@@ -67,6 +67,7 @@ This Ansible role deploys Apache Tomcat using the **Enterprise Split Tomcat** ar
 - **Network**: Internet access for downloading Tomcat archive (or internal repository)
 - **Collections**:
   - `community.crypto` >= 2.0.0 (for self-signed keystore generation via `openssl_privatekey`, `x509_certificate`, `openssl_pkcs12`)
+  - `community.general` >= 6.0.0 (for `sefcontext` SELinux file context management on EL9)
   - `ansible.posix` (for `authorized_key` module when CI/CD is enabled)
 - **Target host packages**: `python3-cryptography` (installed automatically by the role when self-signed keystore is generated)
 
@@ -514,6 +515,7 @@ The current version is **always preserved** — `tomcat_keep_old_versions` contr
 - ✅ **Reverse Proxy Awareness**: `RemoteIpValve` with configurable trusted proxies and `X-Forwarded-*` headers
 - ✅ **Shutdown Port Disabled**: `shutdown_port=-1` prevents remote shutdown attacks
 - ✅ **Systemd Hardening**: `Type=exec`, `ProtectSystem=strict`, `PrivateTmp`, `NoNewPrivileges`, journal logging
+- ✅ **SELinux Support**: Automatic file context labeling (`tomcat_log_t`, `tomcat_exec_t`, `tomcat_var_lib_t`) on EL9 with SELinux enforcing — no manual `audit2allow` required
 - ✅ **JMX Security**: Access and password files with `chmod 400`
 - ✅ **Ansible Vault**: All passwords (`keystore`, `JMX`, `AJP secret`) designed for Vault override
 - ✅ **no_log**: Sensitive tasks (keystore generation, JMX files, SSH keys, AJP secret) use `no_log: true`
@@ -707,6 +709,7 @@ ansible-role-apache-tomcat/
 │   ├── install.yml                    # Download, extract, symlink
 │   ├── directories.yml                # Split Tomcat directory structure
 │   ├── config.yml                     # Configuration templates and keystore (community.crypto)
+│   ├── selinux.yml                    # SELinux file context labeling (EL9)
 │   ├── systemd.yml                    # Systemd service unit
 │   ├── logrotate.yml                  # Log rotation configuration
 │   ├── sudoers.yml                    # CI/CD deployer sudoers

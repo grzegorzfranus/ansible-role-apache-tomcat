@@ -15,3 +15,11 @@
   ansible.builtin.systemd:
     name: "{{ tomcat_service_name }}"
     state: restarted
+
+# Justification: Use command module because restorecon (SELinux context restore)
+# has no native Ansible module. This is the standard method to apply fcontext rules.
+- name: Tomcat | handlers | Restore SELinux contexts
+  become: true
+  ansible.builtin.command:
+    cmd: "restorecon -Rv {{ tomcat_install_dir }} {{ tomcat_log_dir }}"
+  changed_when: true

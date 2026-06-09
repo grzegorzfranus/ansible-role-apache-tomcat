@@ -12,3 +12,8 @@ __tomcat_archive_filename: "apache-tomcat-{{ tomcat_version }}.tar.gz"
 __tomcat_ssl_private_key_path: "{{ tomcat_catalina_base }}/conf/keystore.key"
 __tomcat_ssl_certificate_path: "{{ tomcat_catalina_base }}/conf/keystore.crt"
 __tomcat_ssl_csr_path: "{{ tomcat_catalina_base }}/conf/keystore.csr"
+
+# --- SELinux ---
+__tomcat_selinux_packages:
+  - policycoreutils-python-utils
+  - policycoreutils
