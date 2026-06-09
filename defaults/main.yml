@@ -151,9 +151,10 @@ tomcat_java_opts_extra: ""
 tomcat_enable_gc_logging: false
 
 # GC logging options appended to CATALINA_OPTS when tomcat_enable_gc_logging is true
-# Uses JVM 11+ Unified Logging syntax (-Xlog). Rotation is handled by logrotate.
+# Uses JVM 11+ Unified Logging syntax (-Xlog). JVM rotation is disabled
+# (filecount=0) — logrotate handles rotation exclusively.
 tomcat_gc_log_opts: >-
-  -Xlog:gc*:file={{ tomcat_log_dir }}/gc.log:time,uptime,level,tags
+  -Xlog:gc*:file={{ tomcat_log_dir }}/gc.log:time,uptime,level,tags:filecount=0,filesize=0
 
 # -----------------------------------------------------------------------------
 # 8. Network & SSL
