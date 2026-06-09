@@ -375,10 +375,6 @@ tomcat_systemd_standard_error: "append:{{ tomcat_log_dir }}/catalina.out"
 # Whether to configure logrotate for Tomcat logs
 tomcat_configure_logrotate: true
 
-# Whether Tomcat's AccessLogValve itself rotates the log file.
-# When false, Tomcat writes to 'access_log.log' and logrotate handles rotation.
-tomcat_access_log_rotatable: false
-
 tomcat_logrotate_options:
   archive_directory_path: "/var/log/tomcat/archive"
   frequency: "daily"
@@ -417,8 +413,3 @@ tomcat_configure_logging: true
 # Recommended: INFO for standard operation, WARNING for reduced noise in production
 # Valid values: SEVERE, WARNING, INFO, CONFIG, FINE, FINER, FINEST
 tomcat_logging_level: "INFO"
-
-# Number of days to keep rotated JULI log files before deletion
-# Set to 0 for unlimited retention (not recommended)
-# Should match tomcat_logrotate_options.count for consistency
-tomcat_logging_max_days: 14

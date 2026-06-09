@@ -347,7 +347,6 @@ tomcat_enable_ajp: false
 | Variable                                          | Description                                                       | Default                     |
 | ------------------------------------------------- | ----------------------------------------------------------------- | --------------------------- |
 | `tomcat_configure_logrotate`                      | Whether to configure logrotate for Tomcat logs                    | `true`                      |
-| `tomcat_access_log_rotatable`                     | Whether Tomcat's AccessLogValve itself rotates the log file. When false, logrotate manages rotation. | `false` |
 | `tomcat_logrotate_options.archive_directory_path` | Path to the archive directory for rotated logs (used as `olddir`) | `"/var/log/tomcat/archive"` |
 | `tomcat_logrotate_options.frequency`              | Rotation frequency (`hourly`, `daily`, `weekly`, `monthly`)       | `"daily"`                   |
 | `tomcat_logrotate_options.count`                  | Number of rotated log files to retain                             | `14`                        |
@@ -356,6 +355,8 @@ tomcat_enable_ajp: false
 | `tomcat_logrotate_options.nocreate`               | Do not create new empty log files after rotation                  | `true`                      |
 | `tomcat_logrotate_options.copytruncate`           | Use copytruncate (Tomcat holds open FDs)                          | `true`                      |
 | `tomcat_logrotate_options.dateext`                | Use date extension in rotated file names                          | `true`                      |
+
+> **Note**: All log files use fixed names without date suffixes. JULI and AccessLogValve have `rotatable=false`. Logrotate is the single rotation mechanism, rotating files to `archive/` with `dateext` and `compress`. This ensures stable file paths for log aggregators (Filebeat, Splunk).
 
 ### Upgrade
 
@@ -370,7 +371,6 @@ tomcat_enable_ajp: false
 | -------------------------- | ------------------------------------------------------------------------------------ | ----------- |
 | `tomcat_configure_logging`  | Template a managed `logging.properties` into `CATALINA_BASE/conf/` (CIS 7.2)       | `true`      |
 | `tomcat_logging_level`      | Default log level for Tomcat internals (`SEVERE`/`WARNING`/`INFO`/`CONFIG`/`FINE`/`FINER`/`FINEST`) | `"INFO"` |
-| `tomcat_logging_max_days`   | Days to keep rotated JULI log files (0 = unlimited)                                 | `14`        |
 
 ## 📌 Role Properties
 
