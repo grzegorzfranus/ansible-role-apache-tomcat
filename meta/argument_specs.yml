@@ -458,14 +458,14 @@ argument_specs:
         default: 10
 
       tomcat_systemd_standard_output:
-        description: "Destination for systemd standard output (stdout)"
+        description: "Destination for systemd standard output (journal recommended for EL9 SELinux)"
         type: str
-        default: "append:{{ tomcat_log_dir }}/catalina.out"
+        default: "journal"
 
       tomcat_systemd_standard_error:
-        description: "Destination for systemd standard error (stderr)"
+        description: "Destination for systemd standard error (journal recommended for EL9 SELinux)"
         type: str
-        default: "append:{{ tomcat_log_dir }}/catalina.out"
+        default: "journal"
 
       # -----------------------------------------------------------------
       # 13. Logrotate

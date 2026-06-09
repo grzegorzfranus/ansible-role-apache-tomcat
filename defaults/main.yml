@@ -360,10 +360,14 @@ tomcat_systemd_limit_nofile: 65536
 tomcat_systemd_restart_sec: 10
 
 # Destination for systemd standard output (stdout)
-tomcat_systemd_standard_output: "append:{{ tomcat_log_dir }}/catalina.out"
+# Default: journal (recommended for EL9 with SELinux enforcing)
+# Alternative: "append:{{ tomcat_log_dir }}/catalina.out" (requires custom SELinux policy)
+tomcat_systemd_standard_output: "journal"
 
 # Destination for systemd standard error (stderr)
-tomcat_systemd_standard_error: "append:{{ tomcat_log_dir }}/catalina.out"
+# Default: journal (recommended for EL9 with SELinux enforcing)
+# Alternative: "append:{{ tomcat_log_dir }}/catalina.out" (requires custom SELinux policy)
+tomcat_systemd_standard_error: "journal"
 
 # -----------------------------------------------------------------------------
 # 13. Logrotate

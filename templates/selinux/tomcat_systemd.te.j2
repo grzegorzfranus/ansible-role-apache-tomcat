@@ -1,0 +1,14 @@
+{{ ansible_managed | comment('#') }}
+module tomcat_systemd 1.0;
+
+require {
+    type init_t;
+    type var_log_t;
+    class dir { add_name write search };
+    class file { create write open append getattr setattr };
+}
+
+# Allow systemd (init_t) to create and append to files in var_log_t directories.
+# Required when StandardOutput=append:{{ tomcat_log_dir }}/catalina.out is used.
+allow init_t var_log_t:dir { add_name write search };
+allow init_t var_log_t:file { create write open append getattr setattr };

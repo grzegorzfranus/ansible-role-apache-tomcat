@@ -331,14 +331,16 @@ tomcat_enable_ajp: false
 
 ### Systemd
 
-| Variable                      | Description                                       | Default    |
-| ----------------------------- | ------------------------------------------------- | ---------- |
-| `tomcat_service_name`         | Name of the systemd service unit                  | `"tomcat"` |
-| `tomcat_service_enabled`      | Enable automatic service start on system boot     | `true`     |
-| `tomcat_systemd_limit_nofile` | Maximum open file descriptors (`LimitNOFILE`)     | `65536`    |
-| `tomcat_systemd_restart_sec`  | Delay before restart after failure (`RestartSec`) | `10`       |
-| `tomcat_systemd_standard_output` | Destination for systemd standard output (stdout) | `"append:{{ tomcat_log_dir }}/catalina.out"` |
-| `tomcat_systemd_standard_error`  | Destination for systemd standard error (stderr) | `"append:{{ tomcat_log_dir }}/catalina.out"` |
+| Variable                      | Description                                       | Default      |
+| ----------------------------- | ------------------------------------------------- | ------------ |
+| `tomcat_service_name`         | Name of the systemd service unit                  | `"tomcat"`   |
+| `tomcat_service_enabled`      | Enable automatic service start on system boot     | `true`       |
+| `tomcat_systemd_limit_nofile` | Maximum open file descriptors (`LimitNOFILE`)     | `65536`      |
+| `tomcat_systemd_restart_sec`  | Delay before restart after failure (`RestartSec`) | `10`         |
+| `tomcat_systemd_standard_output` | Destination for systemd standard output        | `"journal"`  |
+| `tomcat_systemd_standard_error`  | Destination for systemd standard error         | `"journal"`  |
+
+> **Note**: The default `journal` output is recommended for EL9 with SELinux enforcing. Console output is available via `journalctl -u tomcat`. If you need file-based output (`append:/var/log/tomcat/catalina.out`), the role installs a custom SELinux policy module to allow `init_t` to write to `var_log_t` directories.
 
 ### Logrotate
 

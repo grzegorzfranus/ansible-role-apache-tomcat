@@ -17,3 +17,4 @@ __tomcat_ssl_csr_path: "{{ tomcat_catalina_base }}/conf/keystore.csr"
 __tomcat_selinux_packages:
   - policycoreutils-python-utils
   - policycoreutils
+  - checkpolicy

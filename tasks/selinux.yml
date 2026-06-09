@@ -2,9 +2,9 @@
 # =============================================================================
 # Ansible Role: Apache Tomcat - Tasks: SELinux
 # =============================================================================
-# Configures SELinux file contexts for Tomcat directories and logs so that
-# systemd can write stdout/stderr to log files under enforcing mode.
-# Runs only on RedHat-family systems with SELinux enabled.
+# Configures SELinux policy for Tomcat on EL9 with SELinux enforcing.
+# Installs a custom policy module that allows systemd (init_t) to manage
+# Tomcat log files when StandardOutput=append: is used.
 # =============================================================================
 
 - name: Tomcat | selinux | Install SELinux management packages
@@ -13,32 +13,74 @@
     name: "{{ __tomcat_selinux_packages }}"
     state: present
 
-- name: Tomcat | selinux | Set SELinux file context for log directory
+# Justification: Use command module because restorecon (SELinux context restore)
+# has no native Ansible module. Ensures log directory inherits correct var_log_t
+# context from /var/log/ parent after any prior incorrect labeling.
+- name: Tomcat | selinux | Restore default SELinux contexts on log directory
   become: true
-  community.general.sefcontext:
-    target: "{{ tomcat_log_dir }}(/.*)?"
-    setype: tomcat_log_t
-    state: present
-  notify:
-    - Tomcat | handlers | Restore SELinux contexts
+  ansible.builtin.command:
+    cmd: "restorecon -Rv {{ tomcat_log_dir }}"
+  changed_when: __tomcat_selinux_restorecon_log.stdout | length > 0
+  register: __tomcat_selinux_restorecon_log
 
-- name: Tomcat | selinux | Set SELinux file context for CATALINA_HOME
+# Justification: Use command module because restorecon has no native Ansible module.
+# Ensures install directory has correct default SELinux contexts.
+- name: Tomcat | selinux | Restore default SELinux contexts on install directory
   become: true
-  community.general.sefcontext:
-    target: "{{ tomcat_install_dir }}(/.*)?"
-    setype: tomcat_var_lib_t
-    state: present
-  notify:
-    - Tomcat | handlers | Restore SELinux contexts
+  ansible.builtin.command:
+    cmd: "restorecon -Rv {{ tomcat_install_dir }}"
+  changed_when: __tomcat_selinux_restorecon_install.stdout | length > 0
+  register: __tomcat_selinux_restorecon_install
 
-- name: Tomcat | selinux | Set SELinux file context for catalina.sh
+# Justification: Use command module because semodule (SELinux module listing)
+# has no native Ansible module. Checks if the custom policy is already installed.
+- name: Tomcat | selinux | Check if custom SELinux policy module is installed
   become: true
-  community.general.sefcontext:
-    target: "{{ tomcat_symlink_path }}/bin/catalina\\.sh"
-    setype: tomcat_exec_t
-    state: present
-  notify:
-    - Tomcat | handlers | Restore SELinux contexts
+  ansible.builtin.command:
+    cmd: "semodule -l"
+  changed_when: false
+  register: __tomcat_selinux_modules
 
-- name: Tomcat | selinux | Flush handlers to apply contexts before service start
-  ansible.builtin.meta: flush_handlers
+- name: Tomcat | selinux | Install custom SELinux policy module
+  when: "'tomcat_systemd' not in __tomcat_selinux_modules.stdout"
+  block:
+    - name: Tomcat | selinux | Template custom SELinux policy source
+      become: true
+      ansible.builtin.template:
+        src: selinux/tomcat_systemd.te.j2
+        dest: /tmp/tomcat_systemd.te
+        mode: "0644"
+
+    # Justification: Use command module because SELinux policy compilation (checkmodule)
+    # has no native Ansible module. Compiles the .te source into a binary .mod module.
+    - name: Tomcat | selinux | Compile custom SELinux policy module
+      become: true
+      ansible.builtin.command:
+        cmd: "checkmodule -M -m -o /tmp/tomcat_systemd.mod /tmp/tomcat_systemd.te"
+      changed_when: true
+
+    # Justification: Use command module because SELinux module packaging (semodule_package)
+    # has no native Ansible module. Packages the compiled module into an installable .pp.
+    - name: Tomcat | selinux | Package custom SELinux policy module
+      become: true
+      ansible.builtin.command:
+        cmd: "semodule_package -o /tmp/tomcat_systemd.pp -m /tmp/tomcat_systemd.mod"
+      changed_when: true
+
+    # Justification: Use command module because SELinux module installation (semodule)
+    # has no native Ansible module. Installs the policy at priority 300 (custom).
+    - name: Tomcat | selinux | Load custom SELinux policy module
+      become: true
+      ansible.builtin.command:
+        cmd: "semodule -X 300 -i /tmp/tomcat_systemd.pp"
+      changed_when: true
+
+    - name: Tomcat | selinux | Clean up temporary policy files
+      become: true
+      ansible.builtin.file:
+        path: "{{ item }}"
+        state: absent
+      loop:
+        - /tmp/tomcat_systemd.te
+        - /tmp/tomcat_systemd.mod
+        - /tmp/tomcat_systemd.pp
