@@ -22,6 +22,7 @@ UMask=0027
 
 Environment="CATALINA_HOME={{ tomcat_symlink_path }}"
 Environment="CATALINA_BASE={{ tomcat_catalina_base }}"
+Environment="CATALINA_PID={{ tomcat_catalina_base }}/temp/catalina.pid"
 
 ExecStart={{ tomcat_symlink_path }}/bin/catalina.sh run
 ExecStop={{ tomcat_symlink_path }}/bin/catalina.sh stop 30 -force
