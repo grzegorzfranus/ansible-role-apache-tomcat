@@ -475,10 +475,6 @@ argument_specs:
         type: bool
         default: true
 
-      tomcat_access_log_rotatable:
-        description: "Whether Tomcat's AccessLogValve itself rotates the log file. When false, logrotate manages rotation."
-        type: bool
-        default: false
 
       tomcat_logrotate_options:
         description: "Logrotate configuration options"
@@ -547,7 +543,7 @@ argument_specs:
       tomcat_logging_level:
         description: "Default log level for Tomcat internal components"
         type: str
-        default: "WARNING"
+        default: "INFO"
         choices:
           - SEVERE
           - WARNING
@@ -556,8 +552,3 @@ argument_specs:
           - FINE
           - FINER
           - FINEST
-
-      tomcat_logging_max_days:
-        description: "Days to keep rotated JULI log files before deletion (0 = unlimited)"
-        type: int
-        default: 14

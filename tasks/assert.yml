@@ -480,14 +480,6 @@
   when:
     - tomcat_configure_logrotate | bool
 
-- name: Tomcat | assert | Validate access log rotatable settings
-  ansible.builtin.assert:
-    that:
-      - tomcat_access_log_rotatable is defined
-      - tomcat_access_log_rotatable | type_debug in ['bool', 'AnsibleUnsafeText', 'str']
-    fail_msg: "tomcat_access_log_rotatable must be a boolean."
-    success_msg: "Access log rotatable flag validated: {{ tomcat_access_log_rotatable }}"
-
 # --- Section 14: Upgrade ---
 
 - name: Tomcat | assert | Validate upgrade settings
@@ -520,14 +512,10 @@
       - tomcat_logging_level is defined
       - tomcat_logging_level is string
       - tomcat_logging_level in ['SEVERE', 'WARNING', 'INFO', 'CONFIG', 'FINE', 'FINER', 'FINEST']
-      - tomcat_logging_max_days is defined
-      - tomcat_logging_max_days | int >= 0
     fail_msg: >-
       Invalid logging settings. tomcat_logging_level must be a valid JULI level
       (SEVERE/WARNING/INFO/CONFIG/FINE/FINER/FINEST).
-      tomcat_logging_max_days must be >= 0.
     success_msg: >-
-      Logging settings validated: level={{ tomcat_logging_level }},
-      maxDays={{ tomcat_logging_max_days }}
+      Logging settings validated: level={{ tomcat_logging_level }}
   when:
     - tomcat_configure_logging | bool

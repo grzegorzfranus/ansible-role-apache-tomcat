@@ -1,0 +1,59 @@
+---
+# =============================================================================
+# Ansible Role: Apache Tomcat - Tasks: SELinux
+# =============================================================================
+# Installs a custom SELinux policy module that allows systemd (init_t) to
+# create log files and resolve symlinks for Tomcat on EL9 with SELinux enforcing.
+# =============================================================================
+
+- name: Tomcat | selinux | Install SELinux management packages
+  become: true
+  ansible.builtin.dnf:
+    name: "{{ __tomcat_selinux_packages }}"
+    state: present
+
+- name: Tomcat | selinux | Create local SELinux policy directory
+  become: true
+  ansible.builtin.file:
+    path: "{{ __tomcat_selinux_policy_dir }}"
+    state: directory
+    owner: root
+    group: root
+    mode: "0755"
+
+- name: Tomcat | selinux | Template custom SELinux policy source
+  become: true
+  ansible.builtin.template:
+    src: selinux/tomcat_systemd.te.j2
+    dest: "{{ __tomcat_selinux_policy_te }}"
+    mode: "0644"
+  register: __tomcat_selinux_policy_te_result
+
+# Justification: Use command module because checkmodule (SELinux policy compiler)
+# has no native Ansible module. Compiles .te source into binary .mod module.
+- name: Tomcat | selinux | Compile custom SELinux policy module # noqa: no-handler
+  become: true
+  ansible.builtin.command:
+    cmd: "checkmodule -M -m -o {{ __tomcat_selinux_policy_mod }} {{ __tomcat_selinux_policy_te }}"
+  when: __tomcat_selinux_policy_te_result is changed
+  changed_when: true
+
+# Justification: Use command module because semodule_package (SELinux packaging)
+# has no native Ansible module. Packages compiled module into installable .pp.
+- name: Tomcat | selinux | Package custom SELinux policy module # noqa: no-handler
+  become: true
+  ansible.builtin.command:
+    cmd: "semodule_package -o {{ __tomcat_selinux_policy_pp }} -m {{ __tomcat_selinux_policy_mod }}"
+  when: __tomcat_selinux_policy_te_result is changed
+  changed_when: true
+
+# Justification: Use command module because semodule (SELinux module management)
+# has no native Ansible module. Installs the policy at priority 300 (custom).
+- name: Tomcat | selinux | Load custom SELinux policy module # noqa: no-handler
+  become: true
+  ansible.builtin.command:
+    cmd: "semodule -X 300 -i {{ __tomcat_selinux_policy_pp }}"
+  when: __tomcat_selinux_policy_te_result is changed
+  changed_when: true
+  notify:
+    - Tomcat | handlers | Restart Tomcat service

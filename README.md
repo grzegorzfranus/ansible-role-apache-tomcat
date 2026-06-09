@@ -67,6 +67,7 @@ This Ansible role deploys Apache Tomcat using the **Enterprise Split Tomcat** ar
 - **Network**: Internet access for downloading Tomcat archive (or internal repository)
 - **Collections**:
   - `community.crypto` >= 2.0.0 (for self-signed keystore generation via `openssl_privatekey`, `x509_certificate`, `openssl_pkcs12`)
+  - `community.general` >= 6.0.0 (for `sefcontext` SELinux file context management on EL9)
   - `ansible.posix` (for `authorized_key` module when CI/CD is enabled)
 - **Target host packages**: `python3-cryptography` (installed automatically by the role when self-signed keystore is generated)
 
@@ -339,12 +340,13 @@ tomcat_enable_ajp: false
 | `tomcat_systemd_standard_output` | Destination for systemd standard output (stdout) | `"append:{{ tomcat_log_dir }}/catalina.out"` |
 | `tomcat_systemd_standard_error`  | Destination for systemd standard error (stderr) | `"append:{{ tomcat_log_dir }}/catalina.out"` |
 
+> **Note**: On EL9 with SELinux enforcing, the role automatically installs a custom SELinux policy module (`tomcat_systemd`) that allows `init_t` to write to `var_log_t` directories and execute files under `/opt/tomcat/`. No manual SELinux configuration is required.
+
 ### Logrotate
 
 | Variable                                          | Description                                                       | Default                     |
 | ------------------------------------------------- | ----------------------------------------------------------------- | --------------------------- |
 | `tomcat_configure_logrotate`                      | Whether to configure logrotate for Tomcat logs                    | `true`                      |
-| `tomcat_access_log_rotatable`                     | Whether Tomcat's AccessLogValve itself rotates the log file. When false, logrotate manages rotation. | `false` |
 | `tomcat_logrotate_options.archive_directory_path` | Path to the archive directory for rotated logs (used as `olddir`) | `"/var/log/tomcat/archive"` |
 | `tomcat_logrotate_options.frequency`              | Rotation frequency (`hourly`, `daily`, `weekly`, `monthly`)       | `"daily"`                   |
 | `tomcat_logrotate_options.count`                  | Number of rotated log files to retain                             | `14`                        |
@@ -353,6 +355,8 @@ tomcat_enable_ajp: false
 | `tomcat_logrotate_options.nocreate`               | Do not create new empty log files after rotation                  | `true`                      |
 | `tomcat_logrotate_options.copytruncate`           | Use copytruncate (Tomcat holds open FDs)                          | `true`                      |
 | `tomcat_logrotate_options.dateext`                | Use date extension in rotated file names                          | `true`                      |
+
+> **Note**: All log files use fixed names without date suffixes. JULI and AccessLogValve have `rotatable=false`. Logrotate is the single rotation mechanism, rotating files to `archive/` with `dateext` and `compress`. This ensures stable file paths for log aggregators (Filebeat, Splunk).
 
 ### Upgrade
 
@@ -366,8 +370,7 @@ tomcat_enable_ajp: false
 | Variable                   | Description                                                                          | Default     |
 | -------------------------- | ------------------------------------------------------------------------------------ | ----------- |
 | `tomcat_configure_logging`  | Template a managed `logging.properties` into `CATALINA_BASE/conf/` (CIS 7.2)       | `true`      |
-| `tomcat_logging_level`      | Default log level for Tomcat internals (`SEVERE`/`WARNING`/`INFO`/`CONFIG`/`FINE`/`FINER`/`FINEST`) | `"WARNING"` |
-| `tomcat_logging_max_days`   | Days to keep rotated JULI log files (0 = unlimited)                                 | `14`        |
+| `tomcat_logging_level`      | Default log level for Tomcat internals (`SEVERE`/`WARNING`/`INFO`/`CONFIG`/`FINE`/`FINER`/`FINEST`) | `"INFO"` |
 
 ## 📌 Role Properties
 
@@ -514,6 +517,7 @@ The current version is **always preserved** — `tomcat_keep_old_versions` contr
 - ✅ **Reverse Proxy Awareness**: `RemoteIpValve` with configurable trusted proxies and `X-Forwarded-*` headers
 - ✅ **Shutdown Port Disabled**: `shutdown_port=-1` prevents remote shutdown attacks
 - ✅ **Systemd Hardening**: `Type=exec`, `ProtectSystem=strict`, `PrivateTmp`, `NoNewPrivileges`, journal logging
+- ✅ **SELinux Support**: Automatic file context labeling (`tomcat_log_t`, `tomcat_exec_t`, `tomcat_var_lib_t`) on EL9 with SELinux enforcing — no manual `audit2allow` required
 - ✅ **JMX Security**: Access and password files with `chmod 400`
 - ✅ **Ansible Vault**: All passwords (`keystore`, `JMX`, `AJP secret`) designed for Vault override
 - ✅ **no_log**: Sensitive tasks (keystore generation, JMX files, SSH keys, AJP secret) use `no_log: true`
@@ -707,6 +711,7 @@ ansible-role-apache-tomcat/
 │   ├── install.yml                    # Download, extract, symlink
 │   ├── directories.yml                # Split Tomcat directory structure
 │   ├── config.yml                     # Configuration templates and keystore (community.crypto)
+│   ├── selinux.yml                    # SELinux file context labeling (EL9)
 │   ├── systemd.yml                    # Systemd service unit
 │   ├── logrotate.yml                  # Log rotation configuration
 │   ├── sudoers.yml                    # CI/CD deployer sudoers

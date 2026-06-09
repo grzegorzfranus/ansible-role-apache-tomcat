@@ -1,0 +1,19 @@
+{{ ansible_managed | comment }}
+module tomcat_systemd 1.0;
+
+require {
+    type init_t;
+    type tomcat_log_t;
+    type tomcat_var_lib_t;
+    class dir add_name;
+    class file { create open write append getattr };
+    class lnk_file read;
+}
+
+#============= init_t ==============
+# Allow systemd to create and write catalina.out in /var/log/tomcat/ (tomcat_log_t)
+allow init_t tomcat_log_t:dir add_name;
+allow init_t tomcat_log_t:file { create open write append getattr };
+
+# Allow systemd to resolve /opt/tomcat/current symlink (tomcat_var_lib_t)
+allow init_t tomcat_var_lib_t:lnk_file read;

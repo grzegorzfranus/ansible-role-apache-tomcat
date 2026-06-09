@@ -7,6 +7,10 @@
 # Production-hardened logging (CIS Benchmark 7.2).
 # Application-level logging should use SLF4J/Logback inside the WAR.
 #
+# Log rotation is handled exclusively by logrotate (not JULI).
+# All log files use fixed names without date suffixes for compatibility
+# with log aggregators (Filebeat, Splunk Universal Forwarder).
+#
 # Note: ConsoleHandler is intentionally excluded. Systemd captures stdout
 # via StandardOutput=append:{{ tomcat_log_dir }}/catalina.out, so a
 # ConsoleHandler would cause duplicate writes.
@@ -18,15 +22,17 @@ handlers = 1catalina.org.apache.juli.AsyncFileHandler, \
 # --- Catalina log handler ---
 1catalina.org.apache.juli.AsyncFileHandler.level = {{ tomcat_logging_level }}
 1catalina.org.apache.juli.AsyncFileHandler.directory = ${catalina.base}/logs
-1catalina.org.apache.juli.AsyncFileHandler.prefix = catalina.
-1catalina.org.apache.juli.AsyncFileHandler.maxDays = {{ tomcat_logging_max_days }}
+1catalina.org.apache.juli.AsyncFileHandler.prefix = catalina
+1catalina.org.apache.juli.AsyncFileHandler.suffix = .log
+1catalina.org.apache.juli.AsyncFileHandler.rotatable = false
 1catalina.org.apache.juli.AsyncFileHandler.encoding = UTF-8
 
 # --- Localhost log handler ---
 2localhost.org.apache.juli.AsyncFileHandler.level = {{ tomcat_logging_level }}
 2localhost.org.apache.juli.AsyncFileHandler.directory = ${catalina.base}/logs
-2localhost.org.apache.juli.AsyncFileHandler.prefix = localhost.
-2localhost.org.apache.juli.AsyncFileHandler.maxDays = {{ tomcat_logging_max_days }}
+2localhost.org.apache.juli.AsyncFileHandler.prefix = localhost
+2localhost.org.apache.juli.AsyncFileHandler.suffix = .log
+2localhost.org.apache.juli.AsyncFileHandler.rotatable = false
 2localhost.org.apache.juli.AsyncFileHandler.encoding = UTF-8
 
 # --- Root logger ---

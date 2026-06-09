@@ -151,9 +151,10 @@ tomcat_java_opts_extra: ""
 tomcat_enable_gc_logging: false
 
 # GC logging options appended to CATALINA_OPTS when tomcat_enable_gc_logging is true
-# Uses JVM 11+ Unified Logging syntax (-Xlog). Rotation is handled by logrotate.
+# Uses JVM 11+ Unified Logging syntax (-Xlog). JVM rotation is disabled
+# (filecount=0) — logrotate handles rotation exclusively.
 tomcat_gc_log_opts: >-
-  -Xlog:gc*:file={{ tomcat_log_dir }}/gc.log:time,uptime,level,tags
+  -Xlog:gc*:file={{ tomcat_log_dir }}/gc.log:time,uptime,level,tags:filecount=0,filesize=0
 
 # -----------------------------------------------------------------------------
 # 8. Network & SSL
@@ -360,9 +361,11 @@ tomcat_systemd_limit_nofile: 65536
 tomcat_systemd_restart_sec: 10
 
 # Destination for systemd standard output (stdout)
+# The role installs a custom SELinux policy module to allow init_t writes to var_log_t.
 tomcat_systemd_standard_output: "append:{{ tomcat_log_dir }}/catalina.out"
 
 # Destination for systemd standard error (stderr)
+# The role installs a custom SELinux policy module to allow init_t writes to var_log_t.
 tomcat_systemd_standard_error: "append:{{ tomcat_log_dir }}/catalina.out"
 
 # -----------------------------------------------------------------------------
@@ -372,10 +375,6 @@ tomcat_systemd_standard_error: "append:{{ tomcat_log_dir }}/catalina.out"
 
 # Whether to configure logrotate for Tomcat logs
 tomcat_configure_logrotate: true
-
-# Whether Tomcat's AccessLogValve itself rotates the log file.
-# When false, Tomcat writes to 'access_log.log' and logrotate handles rotation.
-tomcat_access_log_rotatable: false
 
 tomcat_logrotate_options:
   archive_directory_path: "/var/log/tomcat/archive"
@@ -412,11 +411,6 @@ tomcat_keep_old_versions: 2
 tomcat_configure_logging: true
 
 # Default log level for Tomcat internal components
-# Recommended: WARNING for production (reduces noise), INFO for debugging
+# Recommended: INFO for standard operation, WARNING for reduced noise in production
 # Valid values: SEVERE, WARNING, INFO, CONFIG, FINE, FINER, FINEST
-tomcat_logging_level: "WARNING"
-
-# Number of days to keep rotated JULI log files before deletion
-# Set to 0 for unlimited retention (not recommended)
-# Should match tomcat_logrotate_options.count for consistency
-tomcat_logging_max_days: 14
+tomcat_logging_level: "INFO"

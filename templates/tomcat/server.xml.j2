@@ -116,15 +116,11 @@
         {% endif %}
         <Valve className="org.apache.catalina.valves.AccessLogValve"
                directory="{{ tomcat_log_dir }}"
-               prefix="access_log"
+               prefix="access"
                suffix=".log"
                pattern="%h %l %u %t &quot;%r&quot; %s %b %D"
-               rotatable="{{ tomcat_access_log_rotatable | string | lower }}"
-               {% if not tomcat_access_log_rotatable | bool %}
+               rotatable="false"
                checkExists="true"
-               {% else %}
-               fileDateFormat=".yyyy-MM-dd"
-               {% endif %}
                {% if tomcat_behind_proxy | bool %}
                requestAttributesEnabled="true"
                {% endif %}

@@ -12,3 +12,13 @@ __tomcat_archive_filename: "apache-tomcat-{{ tomcat_version }}.tar.gz"
 __tomcat_ssl_private_key_path: "{{ tomcat_catalina_base }}/conf/keystore.key"
 __tomcat_ssl_certificate_path: "{{ tomcat_catalina_base }}/conf/keystore.crt"
 __tomcat_ssl_csr_path: "{{ tomcat_catalina_base }}/conf/keystore.csr"
+
+# --- SELinux ---
+__tomcat_selinux_packages:
+  - policycoreutils-python-utils
+  - policycoreutils
+  - checkpolicy
+__tomcat_selinux_policy_dir: "/etc/selinux/local"
+__tomcat_selinux_policy_te: "{{ __tomcat_selinux_policy_dir }}/tomcat_systemd.te"
+__tomcat_selinux_policy_mod: "{{ __tomcat_selinux_policy_dir }}/tomcat_systemd.mod"
+__tomcat_selinux_policy_pp: "{{ __tomcat_selinux_policy_dir }}/tomcat_systemd.pp"
