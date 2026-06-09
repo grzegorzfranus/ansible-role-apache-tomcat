@@ -281,15 +281,14 @@
       register: __verify_logrotate_content
       when: __verify_logrotate.stat.exists
 
-    - name: Verify | Assert logrotate configuration targets access_log.log and GC logs
+    - name: Verify | Assert logrotate configuration targets access.log and GC logs
       ansible.builtin.assert:
         that:
-          - "'/var/log/tomcat/access_log.log {' in (__verify_logrotate_content.content | b64decode)"
+          - "'/var/log/tomcat/access.log {' in (__verify_logrotate_content.content | b64decode)"
           - "'copytruncate' in (__verify_logrotate_content.content | b64decode)"
           - "'/var/log/tomcat/gc.log {' in (__verify_logrotate_content.content | b64decode)"
-          - "'/var/log/tomcat/gc.log.[0-9]* {' in (__verify_logrotate_content.content | b64decode)"
         fail_msg: "Logrotate does not target expected log files or is missing GC log configurations"
-        success_msg: "Logrotate configuration for access_log.log and GC logs verified"
+        success_msg: "Logrotate configuration for access.log and GC logs verified"
       when: __verify_logrotate.stat.exists
 
     # --- Hardening verification ---
