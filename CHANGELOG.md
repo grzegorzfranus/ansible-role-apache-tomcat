@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.3.1](https://github.com/grzegorzfranus/ansible-role-apache-tomcat/compare/v0.3.0...v0.3.1) (2026-06-09)
+
+
+### Bug Fixes
+
+* add SELinux policy module for Tomcat on EL9 with enforcing mode ([#10](https://github.com/grzegorzfranus/ansible-role-apache-tomcat/issues/10)) ([71df373](https://github.com/grzegorzfranus/ansible-role-apache-tomcat/commit/71df373e995324b9764564d2702aed817c1fb4e0))
+
 ## [0.3.0](https://github.com/grzegorzfranus/ansible-role-apache-tomcat/compare/v0.2.2...v0.3.0) (2026-06-08)
 
 
