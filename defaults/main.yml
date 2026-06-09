@@ -414,9 +414,9 @@ tomcat_keep_old_versions: 2
 tomcat_configure_logging: true
 
 # Default log level for Tomcat internal components
-# Recommended: WARNING for production (reduces noise), INFO for debugging
+# Recommended: INFO for standard operation, WARNING for reduced noise in production
 # Valid values: SEVERE, WARNING, INFO, CONFIG, FINE, FINER, FINEST
-tomcat_logging_level: "WARNING"
+tomcat_logging_level: "INFO"
 
 # Number of days to keep rotated JULI log files before deletion
 # Set to 0 for unlimited retention (not recommended)

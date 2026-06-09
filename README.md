@@ -369,7 +369,7 @@ tomcat_enable_ajp: false
 | Variable                   | Description                                                                          | Default     |
 | -------------------------- | ------------------------------------------------------------------------------------ | ----------- |
 | `tomcat_configure_logging`  | Template a managed `logging.properties` into `CATALINA_BASE/conf/` (CIS 7.2)       | `true`      |
-| `tomcat_logging_level`      | Default log level for Tomcat internals (`SEVERE`/`WARNING`/`INFO`/`CONFIG`/`FINE`/`FINER`/`FINEST`) | `"WARNING"` |
+| `tomcat_logging_level`      | Default log level for Tomcat internals (`SEVERE`/`WARNING`/`INFO`/`CONFIG`/`FINE`/`FINER`/`FINEST`) | `"INFO"` |
 | `tomcat_logging_max_days`   | Days to keep rotated JULI log files (0 = unlimited)                                 | `14`        |
 
 ## 📌 Role Properties
