@@ -1,27 +1,19 @@
 {{ ansible_managed | comment }}
-module tomcat_systemd 1.1;
+module tomcat_systemd 1.0;
 
 require {
     type init_t;
-    type var_log_t;
-    type usr_t;
-    class dir { add_name write search getattr open read };
-    class file { create write open append read execute execute_no_trans getattr setattr map ioctl };
-    class lnk_file { read getattr };
+    type tomcat_log_t;
+    type tomcat_var_lib_t;
+    class dir add_name;
+    class file { create open write append getattr };
+    class lnk_file read;
 }
 
-# --- Log directory (var_log_t) ---
-# Allow systemd (init_t) to create and append to files in var_log_t directories.
-# Required when StandardOutput=append:{{ tomcat_log_dir }}/catalina.out is used.
-allow init_t var_log_t:dir { add_name write search };
-allow init_t var_log_t:file { create write open append getattr setattr };
+#============= init_t ==============
+# Allow systemd to create and write catalina.out in /var/log/tomcat/ (tomcat_log_t)
+allow init_t tomcat_log_t:dir add_name;
+allow init_t tomcat_log_t:file { create open write append getattr };
 
-# --- Tomcat install directory (usr_t) ---
-# /opt/tomcat/ and its contents inherit usr_t from /opt(/.*)?
-# Allow systemd (init_t) to:
-#   1. Read the symlink {{ tomcat_symlink_path }} -> {{ tomcat_catalina_home }}
-#   2. Search directories under {{ tomcat_install_dir }}
-#   3. Execute {{ tomcat_symlink_path }}/bin/catalina.sh (ExecStart/ExecStop)
-allow init_t usr_t:lnk_file { read getattr };
-allow init_t usr_t:dir { search getattr open read };
-allow init_t usr_t:file { read execute execute_no_trans open getattr map ioctl };
+# Allow systemd to resolve /opt/tomcat/current symlink (tomcat_var_lib_t)
+allow init_t tomcat_var_lib_t:lnk_file read;

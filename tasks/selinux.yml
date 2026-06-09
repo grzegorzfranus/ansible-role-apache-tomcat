@@ -2,9 +2,8 @@
 # =============================================================================
 # Ansible Role: Apache Tomcat - Tasks: SELinux
 # =============================================================================
-# Configures SELinux policy for Tomcat on EL9 with SELinux enforcing.
-# Installs a custom policy module that allows systemd (init_t) to resolve
-# symlinks, execute catalina.sh, and write to log files under /opt/tomcat/.
+# Installs a custom SELinux policy module that allows systemd (init_t) to
+# create log files and resolve symlinks for Tomcat on EL9 with SELinux enforcing.
 # =============================================================================
 
 - name: Tomcat | selinux | Install SELinux management packages
@@ -21,48 +20,6 @@
     owner: root
     group: root
     mode: "0755"
-
-# Remove incorrect sefcontext rules applied by earlier role versions.
-# These must be removed BEFORE restorecon so that var_log_t is restored correctly.
-- name: Tomcat | selinux | Remove incorrect tomcat_log_t context from log directory
-  become: true
-  community.general.sefcontext:
-    target: "{{ tomcat_log_dir }}(/.*)?"
-    setype: tomcat_log_t
-    state: absent
-
-- name: Tomcat | selinux | Remove incorrect tomcat_var_lib_t context from install directory
-  become: true
-  community.general.sefcontext:
-    target: "{{ tomcat_install_dir }}(/.*)?"
-    setype: tomcat_var_lib_t
-    state: absent
-
-- name: Tomcat | selinux | Remove incorrect tomcat_exec_t context from catalina.sh
-  become: true
-  community.general.sefcontext:
-    target: "{{ tomcat_symlink_path }}/bin/catalina\\.sh"
-    setype: tomcat_exec_t
-    state: absent
-
-# Justification: Use command module because restorecon (SELinux context restore)
-# has no native Ansible module. Ensures log directory inherits correct var_log_t
-# context from /var/log/ parent after any prior incorrect labeling.
-- name: Tomcat | selinux | Restore default SELinux contexts on log directory
-  become: true
-  ansible.builtin.command:
-    cmd: "restorecon -Rv {{ tomcat_log_dir }}"
-  changed_when: __tomcat_selinux_restorecon_log.stdout | length > 0
-  register: __tomcat_selinux_restorecon_log
-
-# Justification: Use command module because restorecon has no native Ansible module.
-# Ensures install directory has correct default SELinux contexts.
-- name: Tomcat | selinux | Restore default SELinux contexts on install directory
-  become: true
-  ansible.builtin.command:
-    cmd: "restorecon -Rv {{ tomcat_install_dir }}"
-  changed_when: __tomcat_selinux_restorecon_install.stdout | length > 0
-  register: __tomcat_selinux_restorecon_install
 
 - name: Tomcat | selinux | Template custom SELinux policy source
   become: true
