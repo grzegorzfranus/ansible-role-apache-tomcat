@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.6.0](https://github.com/grzegorzfranus/ansible-role-apache-tomcat/compare/v0.5.2...v0.6.0) (2026-06-18)
+
+
+### Features
+
+* add option to log proxy IP alongside client IP in Tomcat access logs ([#22](https://github.com/grzegorzfranus/ansible-role-apache-tomcat/issues/22)) ([9d9a7b9](https://github.com/grzegorzfranus/ansible-role-apache-tomcat/commit/9d9a7b93d0d95ea765205261fe06b11be285897b))
+
 ## [0.5.2](https://github.com/grzegorzfranus/ansible-role-apache-tomcat/compare/v0.5.1...v0.5.2) (2026-06-18)
 
 
