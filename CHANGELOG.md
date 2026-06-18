@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.6.1](https://github.com/grzegorzfranus/ansible-role-apache-tomcat/compare/v0.6.0...v0.6.1) (2026-06-18)
+
+
+### Bug Fixes
+
+* resolve duplicate client IP logging when tomcat_proxy_log_proxy_… ([#24](https://github.com/grzegorzfranus/ansible-role-apache-tomcat/issues/24)) ([67bdace](https://github.com/grzegorzfranus/ansible-role-apache-tomcat/commit/67bdace69d5ee5ccc8f8a4e8a3653c515a88951d))
+
 ## [0.6.0](https://github.com/grzegorzfranus/ansible-role-apache-tomcat/compare/v0.5.2...v0.6.0) (2026-06-18)
 
 
