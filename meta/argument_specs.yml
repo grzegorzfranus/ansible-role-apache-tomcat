@@ -5,7 +5,7 @@ argument_specs:
     description:
       - "Installs Apache Tomcat using Split architecture (CATALINA_HOME / CATALINA_BASE)."
       - "Configures HTTPS, JMX monitoring, systemd hardening, logrotate, and optional CI/CD deployment user."
-      - "Supports EL 9 (Rocky Linux, RHEL, AlmaLinux, CentOS Stream)."
+      - "Supports EL 8 and EL 9 (Rocky Linux, RHEL, AlmaLinux, CentOS Stream)."
     author: "Grzegorz Franus"
 
     options:
