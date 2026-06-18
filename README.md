@@ -295,6 +295,7 @@ tomcat_enable_ajp: false
 | `tomcat_proxy_internal_proxies` | Java regex of trusted proxy IP addresses (dots must be escaped) | (RFC1918 private ranges) |
 | `tomcat_proxy_remote_ip_header` | HTTP header containing the original client IP                   | `"X-Forwarded-For"`      |
 | `tomcat_proxy_protocol_header`  | HTTP header containing the original protocol (http/https)       | `"X-Forwarded-Proto"`    |
+| `tomcat_proxy_log_proxy_ip`     | Whether to log the immediate proxy IP alongside the client IP   | `false`                  |
 
 ### SSL Keystore
 

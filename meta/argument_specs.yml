@@ -286,6 +286,11 @@ argument_specs:
         type: str
         default: "X-Forwarded-Proto"
 
+      tomcat_proxy_log_proxy_ip:
+        description: "Whether to include the proxy IP address in the access log alongside the client IP"
+        type: bool
+        default: false
+
       # -----------------------------------------------------------------
       # 9. SSL Keystore
       # -----------------------------------------------------------------
