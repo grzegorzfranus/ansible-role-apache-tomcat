@@ -80,6 +80,34 @@
     group: "{{ tomcat_group }}"
     mode: "0750"
 
+- name: Tomcat | directories | Ensure stdout log file exists with correct ownership
+  become: true
+  ansible.builtin.file:
+    path: "{{ tomcat_systemd_standard_output | regex_replace('^(append:|file:)', '') }}"
+    state: touch
+    owner: "{{ tomcat_user }}"
+    group: "{{ tomcat_group }}"
+    mode: "0640"
+    modification_time: preserve
+    access_time: preserve
+  when: >
+    tomcat_systemd_standard_output is search('^append:') or
+    tomcat_systemd_standard_output is search('^file:')
+
+- name: Tomcat | directories | Ensure stderr log file exists with correct ownership
+  become: true
+  ansible.builtin.file:
+    path: "{{ tomcat_systemd_standard_error | regex_replace('^(append:|file:)', '') }}"
+    state: touch
+    owner: "{{ tomcat_user }}"
+    group: "{{ tomcat_group }}"
+    mode: "0640"
+    modification_time: preserve
+    access_time: preserve
+  when: >
+    tomcat_systemd_standard_error is search('^append:') or
+    tomcat_systemd_standard_error is search('^file:')
+
 - name: Tomcat | directories | Create logs symlink in CATALINA_BASE
   become: true
   ansible.builtin.file:

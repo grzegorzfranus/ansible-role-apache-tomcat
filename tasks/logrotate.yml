@@ -26,4 +26,5 @@
     owner: root
     group: root
     mode: "0644"
+    validate: "logrotate -d %s"
     backup: true
