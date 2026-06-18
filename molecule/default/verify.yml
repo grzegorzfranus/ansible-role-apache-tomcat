@@ -280,13 +280,14 @@
         src: "{{ tomcat_catalina_base }}/conf/server.xml"
       register: __verify_server_xml_content
 
-    - name: Verify | Assert server.xml has AccessLogValve rotatable set to false
+    - name: Verify | Assert server.xml has AccessLogValve rotatable set to false and uses correct pattern
       ansible.builtin.assert:
         that:
           - "'rotatable=\"false\"' in (__verify_server_xml_content.content | b64decode)"
           - "'checkExists=\"true\"' in (__verify_server_xml_content.content | b64decode)"
-        fail_msg: "server.xml AccessLogValve rotatable is not false or checkExists is not true"
-        success_msg: "server.xml AccessLogValve rotatable=false verified"
+          - "'pattern=\"%h %l %u %t &quot;%r&quot; %s %b %D\"' in (__verify_server_xml_content.content | b64decode)"
+        fail_msg: "server.xml AccessLogValve rotatable, checkExists, or pattern is incorrect"
+        success_msg: "server.xml AccessLogValve properties verified"
 
     # --- Logrotate verification ---
     - name: Verify | Check logrotate configuration exists

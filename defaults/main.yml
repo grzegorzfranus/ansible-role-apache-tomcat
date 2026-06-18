@@ -241,6 +241,10 @@ tomcat_proxy_remote_ip_header: "X-Forwarded-For"
 # HTTP header containing the original protocol (http/https, set by the reverse proxy)
 tomcat_proxy_protocol_header: "X-Forwarded-Proto"
 
+# Whether to include the proxy IP address in the access log alongside the client IP
+# When true, the access log pattern will format as "%h %{org.apache.tomcat.remoteAddr}r ..."
+tomcat_proxy_log_proxy_ip: false
+
 # -----------------------------------------------------------------------------
 # 9. SSL Keystore
 # -----------------------------------------------------------------------------

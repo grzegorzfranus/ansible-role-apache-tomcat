@@ -275,6 +275,16 @@
     fail_msg: "tomcat_force_https must be a boolean value."
     success_msg: "Forced HTTPS validated: {{ tomcat_force_https }}"
 
+- name: Tomcat | assert | Validate reverse proxy toggles
+  ansible.builtin.assert:
+    that:
+      - tomcat_behind_proxy is defined
+      - tomcat_behind_proxy | type_debug in ['bool', 'AnsibleUnsafeText', 'str']
+      - tomcat_proxy_log_proxy_ip is defined
+      - tomcat_proxy_log_proxy_ip | type_debug in ['bool', 'AnsibleUnsafeText', 'str']
+    fail_msg: "tomcat_behind_proxy and tomcat_proxy_log_proxy_ip must be boolean values."
+    success_msg: "Reverse proxy toggles validated: behind_proxy={{ tomcat_behind_proxy }}, log_proxy_ip={{ tomcat_proxy_log_proxy_ip }}"
+
 - name: Tomcat | assert | Validate reverse proxy settings
   ansible.builtin.assert:
     that:
