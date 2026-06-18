@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.4.0](https://github.com/grzegorzfranus/ansible-role-apache-tomcat/compare/v0.3.2...v0.4.0) (2026-06-18)
+
+
+### Features
+
+* add support for EL8 and document python version constraints ([#14](https://github.com/grzegorzfranus/ansible-role-apache-tomcat/issues/14)) ([8e377be](https://github.com/grzegorzfranus/ansible-role-apache-tomcat/commit/8e377be996742a83c91426d196e6597a63c7a9bf))
+
 ## [0.3.2](https://github.com/grzegorzfranus/ansible-role-apache-tomcat/compare/v0.3.1...v0.3.2) (2026-06-18)
 
 
