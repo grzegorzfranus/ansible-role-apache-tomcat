@@ -25,6 +25,7 @@
               ~ '/bin/apache-tomcat-' ~ tomcat_version ~ '.tar.gz' }}
 
 - name: Tomcat | install | Check if CATALINA_HOME already exists
+  become: true
   ansible.builtin.stat:
     path: "{{ tomcat_catalina_home }}/bin/catalina.sh"
   register: __tomcat_catalina_home_check
@@ -61,7 +62,15 @@
     group: root
     recurse: true
 
+- name: Tomcat | install | Set CATALINA_HOME root directory mode (0755)
+  become: true
+  ansible.builtin.file:
+    path: "{{ tomcat_catalina_home }}"
+    state: directory
+    mode: "0755"
+
 - name: Tomcat | install | Find all directories in CATALINA_HOME
+  become: true
   ansible.builtin.find:
     paths: "{{ tomcat_catalina_home }}"
     recurse: true
@@ -78,6 +87,7 @@
     label: "{{ item.path | basename }}"
 
 - name: Tomcat | install | Find all regular files in CATALINA_HOME (excluding scripts)
+  become: true
   ansible.builtin.find:
     paths: "{{ tomcat_catalina_home }}"
     recurse: true
@@ -95,6 +105,7 @@
     label: "{{ item.path | basename }}"
 
 - name: Tomcat | install | Find shell scripts in CATALINA_HOME/bin
+  become: true
   ansible.builtin.find:
     paths: "{{ tomcat_catalina_home }}/bin"
     patterns: "*.sh"
