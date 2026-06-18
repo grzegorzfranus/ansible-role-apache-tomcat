@@ -61,13 +61,13 @@ This Ansible role deploys Apache Tomcat using the **Enterprise Split Tomcat** ar
 ## 📋 Requirements
 
 - **Ansible**: 2.16 or higher
-- **Python**: 3.9 or higher on target hosts
+- **Python**: 3.6 or higher on target hosts (see compatibility note below)
 - **Java**: JDK/JRE 17+ must be pre-installed on target hosts (managed by a separate role)
 - **Privileges**: sudo/root access on target hosts
 - **Network**: Internet access for downloading Tomcat archive (or internal repository)
 - **Collections**:
   - `community.crypto` >= 2.0.0 (for self-signed keystore generation via `openssl_privatekey`, `x509_certificate`, `openssl_pkcs12`)
-  - `community.general` >= 6.0.0 (for `sefcontext` SELinux file context management on EL9)
+  - `community.general` >= 6.0.0 (for `sefcontext` SELinux file context management on EL8/EL9)
   - `ansible.posix` (for `authorized_key` module when CI/CD is enabled)
 - **Target host packages**: `python3-cryptography` (installed automatically by the role when self-signed keystore is generated)
 
@@ -76,8 +76,15 @@ This Ansible role deploys Apache Tomcat using the **Enterprise Split Tomcat** ar
 | OS Family                      | Version | Status                                               |
 | ------------------------------ | ------- | ---------------------------------------------------- |
 | EL (RHEL, Rocky, Alma, Oracle) | 9       | ![✓](https://img.shields.io/badge/✓-brightgreen.svg) |
+| EL (RHEL, Rocky, Alma, Oracle) | 8       | ![✓](https://img.shields.io/badge/✓-brightgreen.svg) * |
 
-> **Note**: This role targets EL9 exclusively. Tomcat is installed from the Apache tarball (not RPM packages), so the OS dependency is limited to systemd, user management, and Java availability.
+> **Note**: Tomcat is installed from the Apache tarball (not RPM packages), so the OS dependency is limited to systemd, user management, and Java availability.
+>
+> \* **EL8 Compatibility Constraints**:
+> - **Ansible & Python compatibility**: EL8 defaults to Python 3.6. Support for target Python 3.6 was dropped in `ansible-core` >= 2.17.
+>   - To run on EL8 with the system's default Python 3.6, you must use `ansible-core` <= 2.16.
+>   - If running `ansible-core` >= 2.17, EL8 targets require Python >= 3.7. However, the system `python3-dnf` package manager bindings on EL8 are compiled exclusively for Python 3.6 and will not be available on newer Python interpreters. This will cause tasks using the `dnf` module (such as installing SELinux utilities or package updates) to fail.
+> - **Molecule Testing**: Due to these Python version compatibility constraints, EL8 is not officially tested in the role's Molecule test suite (which runs a newer Ansible version in CI).
 
 ### Ansible version
 
@@ -85,7 +92,7 @@ Ansible >= 2.16
 
 ### Python version
 
-Python >= 3.9
+Python >= 3.6 (with compatibility constraints on EL8)
 
 ### Setup module
 
@@ -340,7 +347,7 @@ tomcat_enable_ajp: false
 | `tomcat_systemd_standard_output` | Destination for systemd standard output (stdout) | `"append:{{ tomcat_log_dir }}/catalina.out"` |
 | `tomcat_systemd_standard_error`  | Destination for systemd standard error (stderr) | `"append:{{ tomcat_log_dir }}/catalina.out"` |
 
-> **Note**: On EL9 with SELinux enforcing, the role automatically installs a custom SELinux policy module (`tomcat_systemd`) that allows `init_t` to write to `var_log_t` directories and execute files under `/opt/tomcat/`. No manual SELinux configuration is required.
+> **Note**: On EL8/EL9 with SELinux enforcing, the role automatically installs a custom SELinux policy module (`tomcat_systemd`) that allows `init_t` to write to `var_log_t` directories and execute files under `/opt/tomcat/`. No manual SELinux configuration is required.
 
 ### Logrotate
 
@@ -517,7 +524,7 @@ The current version is **always preserved** — `tomcat_keep_old_versions` contr
 - ✅ **Reverse Proxy Awareness**: `RemoteIpValve` with configurable trusted proxies and `X-Forwarded-*` headers
 - ✅ **Shutdown Port Disabled**: `shutdown_port=-1` prevents remote shutdown attacks
 - ✅ **Systemd Hardening**: `Type=exec`, `ProtectSystem=strict`, `PrivateTmp`, `NoNewPrivileges`, journal logging
-- ✅ **SELinux Support**: Automatic file context labeling (`tomcat_log_t`, `tomcat_exec_t`, `tomcat_var_lib_t`) on EL9 with SELinux enforcing — no manual `audit2allow` required
+- ✅ **SELinux Support**: Automatic file context labeling (`tomcat_log_t`, `tomcat_exec_t`, `tomcat_var_lib_t`) on EL8/EL9 with SELinux enforcing — no manual `audit2allow` required
 - ✅ **JMX Security**: Access and password files with `chmod 400`
 - ✅ **Ansible Vault**: All passwords (`keystore`, `JMX`, `AJP secret`) designed for Vault override
 - ✅ **no_log**: Sensitive tasks (keystore generation, JMX files, SSH keys, AJP secret) use `no_log: true`
@@ -711,7 +718,7 @@ ansible-role-apache-tomcat/
 │   ├── install.yml                    # Download, extract, symlink
 │   ├── directories.yml                # Split Tomcat directory structure
 │   ├── config.yml                     # Configuration templates and keystore (community.crypto)
-│   ├── selinux.yml                    # SELinux file context labeling (EL9)
+│   ├── selinux.yml                    # SELinux file context labeling (EL8/EL9)
 │   ├── systemd.yml                    # Systemd service unit
 │   ├── logrotate.yml                  # Log rotation configuration
 │   ├── sudoers.yml                    # CI/CD deployer sudoers
