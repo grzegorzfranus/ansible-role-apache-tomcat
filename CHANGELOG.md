@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.3.2](https://github.com/grzegorzfranus/ansible-role-apache-tomcat/compare/v0.3.1...v0.3.2) (2026-06-18)
+
+
+### Bug Fixes
+
+* pre-create stdout and stderr log files and add template validation ([#12](https://github.com/grzegorzfranus/ansible-role-apache-tomcat/issues/12)) ([e41e713](https://github.com/grzegorzfranus/ansible-role-apache-tomcat/commit/e41e71362bfa769a8c52d639e9dbeb3ce6ce9956))
+
 ## [0.3.1](https://github.com/grzegorzfranus/ansible-role-apache-tomcat/compare/v0.3.0...v0.3.1) (2026-06-09)
 
 
