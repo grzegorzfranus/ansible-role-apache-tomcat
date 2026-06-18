@@ -51,6 +51,32 @@
         fail_msg: "CATALINA_HOME binary not found"
         success_msg: "CATALINA_HOME verified"
 
+    - name: Verify | Check CATALINA_HOME directory permissions
+      ansible.builtin.stat:
+        path: "{{ tomcat_catalina_home }}"
+      register: __verify_catalina_home_dir
+
+    - name: Verify | Assert CATALINA_HOME directory permissions are 0755
+      ansible.builtin.assert:
+        that:
+          - __verify_catalina_home_dir.stat.exists
+          - __verify_catalina_home_dir.stat.mode == '0755'
+        fail_msg: "CATALINA_HOME directory does not have correct permissions (0755)"
+        success_msg: "CATALINA_HOME directory permissions verified (0755)"
+
+    - name: Verify | Check CATALINA_HOME bin directory permissions
+      ansible.builtin.stat:
+        path: "{{ tomcat_catalina_home }}/bin"
+      register: __verify_catalina_home_bin_dir
+
+    - name: Verify | Assert CATALINA_HOME bin directory permissions are 0755
+      ansible.builtin.assert:
+        that:
+          - __verify_catalina_home_bin_dir.stat.exists
+          - __verify_catalina_home_bin_dir.stat.mode == '0755'
+        fail_msg: "CATALINA_HOME bin directory does not have correct permissions (0755)"
+        success_msg: "CATALINA_HOME bin directory permissions verified (0755)"
+
     # --- Symlink verification ---
     - name: Verify | Check version symlink
       ansible.builtin.stat:
