@@ -119,7 +119,7 @@
                prefix="access"
                suffix=".log"
                {% if tomcat_behind_proxy | bool and tomcat_proxy_log_proxy_ip | bool %}
-               pattern="%{org.apache.tomcat.remoteAddr}r %h %l %u %t &quot;%r&quot; %s %b %D"
+               pattern="%{org.apache.tomcat.remoteAddr}r %l %u %t &quot;%r&quot; %s %b %D - %h"
                {% else %}
                pattern="%h %l %u %t &quot;%r&quot; %s %b %D"
                {% endif %}
