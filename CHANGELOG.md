@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.5.2](https://github.com/grzegorzfranus/ansible-role-apache-tomcat/compare/v0.5.1...v0.5.2) (2026-06-18)
+
+
+### Miscellaneous
+
+* update gitignore to include standard python, ansible, and OS files ([#20](https://github.com/grzegorzfranus/ansible-role-apache-tomcat/issues/20)) ([1f3071d](https://github.com/grzegorzfranus/ansible-role-apache-tomcat/commit/1f3071da222a73ba8b6c426986c76c39d4b8eb34))
+
 ## [0.5.1](https://github.com/grzegorzfranus/ansible-role-apache-tomcat/compare/v0.5.0...v0.5.1) (2026-06-18)
 
 
