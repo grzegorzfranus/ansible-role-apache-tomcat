@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.5.1](https://github.com/grzegorzfranus/ansible-role-apache-tomcat/compare/v0.5.0...v0.5.1) (2026-06-18)
+
+
+### Bug Fixes
+
+* resolve permission denied under umask 027 by setting explicit CATALINA_HOME mode and running find/stat tasks with become ([#18](https://github.com/grzegorzfranus/ansible-role-apache-tomcat/issues/18)) ([92d70da](https://github.com/grzegorzfranus/ansible-role-apache-tomcat/commit/92d70da4d2a6a36a0503f3091b00dce0b7744520))
+
 ## [0.5.0](https://github.com/grzegorzfranus/ansible-role-apache-tomcat/compare/v0.4.0...v0.5.0) (2026-06-18)
 
 
