@@ -67,7 +67,7 @@
     state: directory
     owner: root
     group: "{{ tomcat_group }}"
-    mode: "0750"
+    mode: "{{ '0770' if tomcat_unpack_wars | bool else '0750' }}"
   when:
     - not (tomcat_enable_cicd | bool)
 

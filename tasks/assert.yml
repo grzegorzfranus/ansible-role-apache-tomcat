@@ -447,8 +447,10 @@
       - tomcat_systemd_limit_nofile | int > 0
       - tomcat_systemd_restart_sec is defined
       - tomcat_systemd_restart_sec | int >= 0
-    fail_msg: "Invalid systemd settings. service_name must be non-empty, limit_nofile must be positive, restart_sec must be >= 0."
-    success_msg: "Systemd settings validated: service={{ tomcat_service_name }}, nofile={{ tomcat_systemd_limit_nofile }}"
+      - tomcat_systemd_timeout_stop_sec is defined
+      - tomcat_systemd_timeout_stop_sec | int > 0
+    fail_msg: "Invalid systemd settings. service_name must be non-empty, limit_nofile must be positive, restart_sec must be >= 0, timeout_stop_sec must be positive."
+    success_msg: "Systemd settings validated: service={{ tomcat_service_name }}, nofile={{ tomcat_systemd_limit_nofile }}, timeout_stop={{ tomcat_systemd_timeout_stop_sec }}"
 
 - name: Tomcat | assert | Validate systemd logging settings
   ansible.builtin.assert:

@@ -364,6 +364,9 @@ tomcat_systemd_limit_nofile: 65536
 # Delay in seconds before restarting the service after a failure (RestartSec)
 tomcat_systemd_restart_sec: 10
 
+# Timeout in seconds to wait for Tomcat to stop before sending SIGKILL (TimeoutStopSec)
+tomcat_systemd_timeout_stop_sec: 90
+
 # Destination for systemd standard output (stdout)
 # The role installs a custom SELinux policy module to allow init_t writes to var_log_t.
 tomcat_systemd_standard_output: "append:{{ tomcat_log_dir }}/catalina.out"
