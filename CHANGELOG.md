@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.6.3](https://github.com/grzegorzfranus/ansible-role-apache-tomcat/compare/v0.6.2...v0.6.3) (2026-06-19)
+
+
+### Bug Fixes
+
+* adopt enterprise systemd lifecycle, adjust webapps permissions and web.xml ([#28](https://github.com/grzegorzfranus/ansible-role-apache-tomcat/issues/28)) ([e07c5a3](https://github.com/grzegorzfranus/ansible-role-apache-tomcat/commit/e07c5a3eaf2af7cb69b42144e5f6dc7ac5e7ed3e))
+
 ## [0.6.2](https://github.com/grzegorzfranus/ansible-role-apache-tomcat/compare/v0.6.1...v0.6.2) (2026-06-18)
 
 
