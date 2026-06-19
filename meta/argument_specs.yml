@@ -462,6 +462,11 @@ argument_specs:
         type: int
         default: 10
 
+      tomcat_systemd_timeout_stop_sec:
+        description: "Timeout in seconds to wait for Tomcat to stop before sending SIGKILL (TimeoutStopSec)"
+        type: int
+        default: 90
+
       tomcat_systemd_standard_output:
         description: "Destination for systemd standard output (stdout)"
         type: str

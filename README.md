@@ -345,6 +345,7 @@ tomcat_enable_ajp: false
 | `tomcat_service_enabled`      | Enable automatic service start on system boot     | `true`     |
 | `tomcat_systemd_limit_nofile` | Maximum open file descriptors (`LimitNOFILE`)     | `65536`    |
 | `tomcat_systemd_restart_sec`  | Delay before restart after failure (`RestartSec`) | `10`       |
+| `tomcat_systemd_timeout_stop_sec` | Timeout before sending SIGKILL (`TimeoutStopSec`) | `90`       |
 | `tomcat_systemd_standard_output` | Destination for systemd standard output (stdout) | `"append:{{ tomcat_log_dir }}/catalina.out"` |
 | `tomcat_systemd_standard_error`  | Destination for systemd standard error (stderr) | `"append:{{ tomcat_log_dir }}/catalina.out"` |
 
