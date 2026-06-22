@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.6.4](https://github.com/grzegorzfranus/ansible-role-apache-tomcat/compare/v0.6.3...v0.6.4) (2026-06-22)
+
+
+### Bug Fixes
+
+* add support for extra systemd readwrite paths ([#31](https://github.com/grzegorzfranus/ansible-role-apache-tomcat/issues/31)) ([92b692b](https://github.com/grzegorzfranus/ansible-role-apache-tomcat/commit/92b692b2c5500a7f3e6889221a4c3e776c49d30f))
+
 ## [0.6.3](https://github.com/grzegorzfranus/ansible-role-apache-tomcat/compare/v0.6.2...v0.6.3) (2026-06-19)
 
 
