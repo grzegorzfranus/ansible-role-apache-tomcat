@@ -375,6 +375,10 @@ tomcat_systemd_standard_output: "append:{{ tomcat_log_dir }}/catalina.out"
 # The role installs a custom SELinux policy module to allow init_t writes to var_log_t.
 tomcat_systemd_standard_error: "append:{{ tomcat_log_dir }}/catalina.out"
 
+# List of additional custom directory paths that the Tomcat service is allowed to write to.
+# Appended to the systemd service ReadWritePaths directive. Useful for custom logs or upload directories.
+tomcat_systemd_extra_read_write_paths: []
+
 # -----------------------------------------------------------------------------
 # 13. Logrotate
 # -----------------------------------------------------------------------------
