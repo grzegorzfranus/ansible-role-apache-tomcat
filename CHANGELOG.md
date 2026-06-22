@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.7.0](https://github.com/grzegorzfranus/ansible-role-apache-tomcat/compare/v0.6.5...v0.7.0) (2026-06-22)
+
+
+### Features
+
+* add JMX credentials idempotency with force override ([#36](https://github.com/grzegorzfranus/ansible-role-apache-tomcat/issues/36)) ([8c99650](https://github.com/grzegorzfranus/ansible-role-apache-tomcat/commit/8c99650aa4f93e3384c52603f300d4526436c40b))
+
 ## [0.6.5](https://github.com/grzegorzfranus/ansible-role-apache-tomcat/compare/v0.6.4...v0.6.5) (2026-06-22)
 
 
