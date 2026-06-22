@@ -399,6 +399,17 @@
   when:
     - tomcat_enable_jmx | bool
 
+- name: Tomcat | assert | Validate JMX force credentials toggle
+  ansible.builtin.assert:
+    that:
+      - tomcat_jmx_force_credentials is defined
+      - tomcat_jmx_force_credentials | type_debug in ['bool', 'AnsibleUnsafeText', 'str']
+    fail_msg: "tomcat_jmx_force_credentials must be a boolean."
+    success_msg: "JMX force credentials toggle validated: {{ tomcat_jmx_force_credentials }}"
+  when:
+    - tomcat_enable_jmx | bool
+
+
 # --- Section 11: Hardening ---
 
 - name: Tomcat | assert | Validate hardening settings

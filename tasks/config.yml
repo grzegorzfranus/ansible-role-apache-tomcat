@@ -220,6 +220,20 @@
 
 # --- JMX security files ---
 
+- name: Tomcat | config | Check if JMX credential files exist
+  become: true
+  ansible.builtin.stat:
+    path: "{{ item }}"
+  loop:
+    - "{{ tomcat_jmx_access_file }}"
+    - "{{ tomcat_jmx_password_file }}"
+  loop_control:
+    label: "{{ item | basename }}"
+  register: __tomcat_jmx_credential_checks
+  changed_when: false
+  when:
+    - tomcat_enable_jmx | bool
+
 - name: Tomcat | config | Template JMX access file
   become: true
   ansible.builtin.template:
@@ -230,6 +244,7 @@
     mode: "0400"
   when:
     - tomcat_enable_jmx | bool
+    - "tomcat_jmx_force_credentials | bool or not (__tomcat_jmx_credential_checks.results | default([{'stat': {'exists': false}}, {'stat': {'exists': false}}]))[0].stat.exists | default(false)"
   no_log: true
   notify:
     - Tomcat | handlers | Restart Tomcat service
@@ -244,11 +259,32 @@
     mode: "0400"
   when:
     - tomcat_enable_jmx | bool
+    - "tomcat_jmx_force_credentials | bool or not (__tomcat_jmx_credential_checks.results | default([{'stat': {'exists': false}}, {'stat': {'exists': false}}]))[1].stat.exists | default(false)"
   no_log: true
   notify:
     - Tomcat | handlers | Restart Tomcat service
 
+- name: Tomcat | config | Enforce JMX credential file permissions
+  become: true
+  ansible.builtin.file:
+    path: "{{ item }}"
+    owner: "{{ tomcat_user }}"
+    group: "{{ tomcat_group }}"
+    mode: "0400"
+    state: file
+  loop:
+    - "{{ tomcat_jmx_access_file }}"
+    - "{{ tomcat_jmx_password_file }}"
+  loop_control:
+    label: "{{ item | basename }}"
+  when:
+    - tomcat_enable_jmx | bool
+    - not (tomcat_jmx_force_credentials | bool)
+    - "(__tomcat_jmx_credential_checks.results | default([{'stat': {'exists': false}}, {'stat': {'exists': false}}]))[0].stat.exists | default(false)"
+    - "(__tomcat_jmx_credential_checks.results | default([{'stat': {'exists': false}}, {'stat': {'exists': false}}]))[1].stat.exists | default(false)"
+
 # --- Hardening: remove default applications ---
+
 
 - name: Tomcat | config | Remove default Tomcat applications (defense-in-depth)
   become: true

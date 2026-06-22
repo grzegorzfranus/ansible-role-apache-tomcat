@@ -318,6 +318,12 @@ tomcat_jmx_access_file: "{{ tomcat_catalina_base }}/conf/jmxremote.access"
 # Path to the JMX password file on the target server
 tomcat_jmx_password_file: "{{ tomcat_catalina_base }}/conf/jmxremote.password"
 
+# Force overwrite of existing JMX credential files with values from vars
+# When false, existing credential files are preserved and only permissions are enforced.
+# Set to true to override existing credentials with current variables.
+tomcat_jmx_force_credentials: false
+
+
 # -----------------------------------------------------------------------------
 # 11. Hardening
 # -----------------------------------------------------------------------------

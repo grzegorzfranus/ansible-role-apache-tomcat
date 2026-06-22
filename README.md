@@ -325,6 +325,8 @@ tomcat_enable_ajp: false
 | `tomcat_jmx_password`      | JMX password (override with Ansible Vault!) | `"changeit"`                                           |
 | `tomcat_jmx_access_file`   | Path to the JMX access file                 | `"{{ tomcat_catalina_base }}/conf/jmxremote.access"`   |
 | `tomcat_jmx_password_file` | Path to the JMX password file               | `"{{ tomcat_catalina_base }}/conf/jmxremote.password"` |
+| `tomcat_jmx_force_credentials` | Force overwrite of existing JMX credential files | `false`                                                |
+
 
 ### Hardening
 

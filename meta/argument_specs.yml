@@ -400,6 +400,12 @@ argument_specs:
         type: str
         default: "{{ tomcat_catalina_base }}/conf/jmxremote.password"
 
+      tomcat_jmx_force_credentials:
+        description: "Force overwrite of existing JMX credential files with values from vars"
+        type: bool
+        default: false
+
+
       # -----------------------------------------------------------------
       # 11. Hardening
       # -----------------------------------------------------------------
