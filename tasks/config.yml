@@ -233,6 +233,7 @@
   changed_when: false
   when:
     - tomcat_enable_jmx | bool
+    - tomcat_jmx_authenticate | bool
 
 - name: Tomcat | config | Template JMX access file
   become: true
@@ -244,6 +245,7 @@
     mode: "0400"
   when:
     - tomcat_enable_jmx | bool
+    - tomcat_jmx_authenticate | bool
     - "tomcat_jmx_force_credentials | bool or not (__tomcat_jmx_credential_checks.results | default([{'stat': {'exists': false}}, {'stat': {'exists': false}}]))[0].stat.exists | default(false)"
   no_log: true
   notify:
@@ -259,6 +261,7 @@
     mode: "0400"
   when:
     - tomcat_enable_jmx | bool
+    - tomcat_jmx_authenticate | bool
     - "tomcat_jmx_force_credentials | bool or not (__tomcat_jmx_credential_checks.results | default([{'stat': {'exists': false}}, {'stat': {'exists': false}}]))[1].stat.exists | default(false)"
   no_log: true
   notify:
@@ -279,12 +282,12 @@
     label: "{{ item | basename }}"
   when:
     - tomcat_enable_jmx | bool
+    - tomcat_jmx_authenticate | bool
     - not (tomcat_jmx_force_credentials | bool)
     - "(__tomcat_jmx_credential_checks.results | default([{'stat': {'exists': false}}, {'stat': {'exists': false}}]))[0].stat.exists | default(false)"
     - "(__tomcat_jmx_credential_checks.results | default([{'stat': {'exists': false}}, {'stat': {'exists': false}}]))[1].stat.exists | default(false)"
 
 # --- Hardening: remove default applications ---
-
 
 - name: Tomcat | config | Remove default Tomcat applications (defense-in-depth)
   become: true

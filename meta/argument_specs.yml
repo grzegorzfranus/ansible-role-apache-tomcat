@@ -376,8 +376,14 @@ argument_specs:
         type: str
         default: "localhost"
 
+      tomcat_jmx_authenticate:
+        description: "Require authentication for remote JMX monitoring"
+        type: bool
+        default: true
+
       tomcat_jmx_role:
         description: "JMX role name"
+
         type: str
         default: "readonly"
         choices:
