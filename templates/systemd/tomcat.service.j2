@@ -44,6 +44,9 @@ ReadWritePaths={{ tomcat_catalina_base }}/temp
 ReadWritePaths={{ tomcat_catalina_base }}/work
 ReadWritePaths={{ tomcat_log_dir }}
 ReadWritePaths={{ tomcat_catalina_base }}/webapps
+{% for path in tomcat_systemd_extra_read_write_paths %}
+ReadWritePaths={{ path }}
+{% endfor %}
 ReadOnlyPaths={{ tomcat_symlink_path }}
 
 # --- Resource limits ---

@@ -477,6 +477,12 @@ argument_specs:
         type: str
         default: "append:{{ tomcat_log_dir }}/catalina.out"
 
+      tomcat_systemd_extra_read_write_paths:
+        description: "List of additional custom directories that Tomcat systemd service is allowed to write to"
+        type: list
+        elements: str
+        default: []
+
       # -----------------------------------------------------------------
       # 13. Logrotate
       # -----------------------------------------------------------------

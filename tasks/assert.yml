@@ -464,6 +464,26 @@
     fail_msg: "tomcat_systemd_standard_output and tomcat_systemd_standard_error must be non-empty strings."
     success_msg: "Systemd logging paths validated"
 
+- name: Tomcat | assert | Validate extra systemd write paths
+  ansible.builtin.assert:
+    that:
+      - tomcat_systemd_extra_read_write_paths is defined
+      - tomcat_systemd_extra_read_write_paths is iterable
+    fail_msg: "tomcat_systemd_extra_read_write_paths must be a list."
+    success_msg: "tomcat_systemd_extra_read_write_paths list validated"
+
+- name: Tomcat | assert | Validate extra systemd write paths elements
+  ansible.builtin.assert:
+    that:
+      - path_item is string
+      - path_item is match('^/')
+    fail_msg: "Each extra write path must be an absolute path starting with '/'."
+    success_msg: "Extra write path validated: {{ path_item }}"
+  loop: "{{ tomcat_systemd_extra_read_write_paths }}"
+  loop_control:
+    loop_var: path_item
+    label: "{{ path_item }}"
+
 # --- Section 13: Logrotate ---
 
 - name: Tomcat | assert | Validate logrotate toggle
