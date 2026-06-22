@@ -348,6 +348,7 @@ tomcat_enable_ajp: false
 | `tomcat_systemd_timeout_stop_sec` | Timeout before sending SIGKILL (`TimeoutStopSec`) | `90`       |
 | `tomcat_systemd_standard_output` | Destination for systemd standard output (stdout) | `"append:{{ tomcat_log_dir }}/catalina.out"` |
 | `tomcat_systemd_standard_error`  | Destination for systemd standard error (stderr) | `"append:{{ tomcat_log_dir }}/catalina.out"` |
+| `tomcat_systemd_extra_read_write_paths` | List of additional custom paths to allow Tomcat write access (appended to `ReadWritePaths`) | `[]` |
 
 > **Note**: On EL8/EL9 with SELinux enforcing, the role automatically installs a custom SELinux policy module (`tomcat_systemd`) that allows `init_t` to write to `var_log_t` directories and execute files under `/opt/tomcat/`. No manual SELinux configuration is required.
 
