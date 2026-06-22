@@ -306,8 +306,14 @@ tomcat_jmx_rmi_port: 9091
 # JMX RMI server hostname / listen address (localhost = local monitoring only)
 tomcat_jmx_address: "localhost"
 
+# Require authentication for remote JMX monitoring
+# When true (default), password and access files are configured and enforced.
+# Set to false to allow unauthenticated JMX access.
+tomcat_jmx_authenticate: true
+
 # JMX role name (readonly or readwrite)
 tomcat_jmx_role: "readonly"
+
 
 # JMX password (override with Ansible Vault in production!)
 tomcat_jmx_password: "changeit"

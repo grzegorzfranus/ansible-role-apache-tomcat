@@ -73,14 +73,15 @@ This Ansible role deploys Apache Tomcat using the **Enterprise Split Tomcat** ar
 
 ### Supported operating systems
 
-| OS Family                      | Version | Status                                               |
-| ------------------------------ | ------- | ---------------------------------------------------- |
-| EL (RHEL, Rocky, Alma, Oracle) | 9       | ![✓](https://img.shields.io/badge/✓-brightgreen.svg) |
-| EL (RHEL, Rocky, Alma, Oracle) | 8       | ![✓](https://img.shields.io/badge/✓-brightgreen.svg) * |
+| OS Family                      | Version | Status                                                  |
+| ------------------------------ | ------- | ------------------------------------------------------- |
+| EL (RHEL, Rocky, Alma, Oracle) | 9       | ![✓](https://img.shields.io/badge/✓-brightgreen.svg)    |
+| EL (RHEL, Rocky, Alma, Oracle) | 8       | ![✓](https://img.shields.io/badge/✓-brightgreen.svg) \* |
 
 > **Note**: Tomcat is installed from the Apache tarball (not RPM packages), so the OS dependency is limited to systemd, user management, and Java availability.
 >
 > \* **EL8 Compatibility Constraints**:
+>
 > - **Ansible & Python compatibility**: EL8 defaults to Python 3.6. Support for target Python 3.6 was dropped in `ansible-core` >= 2.17.
 >   - To run on EL8 with the system's default Python 3.6, you must use `ansible-core` <= 2.16.
 >   - If running `ansible-core` >= 2.17, EL8 targets require Python >= 3.7. However, the system `python3-dnf` package manager bindings on EL8 are compiled exclusively for Python 3.6 and will not be available on newer Python interpreters. This will cause tasks using the `dnf` module (such as installing SELinux utilities or package updates) to fail.
@@ -315,42 +316,42 @@ tomcat_enable_ajp: false
 
 ### JMX
 
-| Variable                   | Description                                 | Default                                                |
-| -------------------------- | ------------------------------------------- | ------------------------------------------------------ |
-| `tomcat_enable_jmx`        | Enable secured JMX remote monitoring        | `false`                                                |
-| `tomcat_jmx_port`          | JMX registry port                           | `9090`                                                 |
-| `tomcat_jmx_rmi_port`      | JMX RMI server port                         | `9091`                                                 |
-| `tomcat_jmx_address`       | JMX RMI server hostname / listen address    | `"localhost"`                                          |
-| `tomcat_jmx_role`          | JMX role name (`readonly` or `readwrite`)   | `"readonly"`                                           |
-| `tomcat_jmx_password`      | JMX password (override with Ansible Vault!) | `"changeit"`                                           |
-| `tomcat_jmx_access_file`   | Path to the JMX access file                 | `"{{ tomcat_catalina_base }}/conf/jmxremote.access"`   |
-| `tomcat_jmx_password_file` | Path to the JMX password file               | `"{{ tomcat_catalina_base }}/conf/jmxremote.password"` |
+| Variable                       | Description                                      | Default                                                |
+| ------------------------------ | ------------------------------------------------ | ------------------------------------------------------ |
+| `tomcat_enable_jmx`            | Enable secured JMX remote monitoring             | `false`                                                |
+| `tomcat_jmx_port`              | JMX registry port                                | `9090`                                                 |
+| `tomcat_jmx_rmi_port`          | JMX RMI server port                              | `9091`                                                 |
+| `tomcat_jmx_address`           | JMX RMI server hostname / listen address         | `"localhost"`                                          |
+| `tomcat_jmx_authenticate`      | Require authentication for remote JMX monitoring | `true`                                                 |
+| `tomcat_jmx_role`              | JMX role name (`readonly` or `readwrite`)        | `"readonly"`                                           |
+| `tomcat_jmx_password`          | JMX password (override with Ansible Vault!)      | `"changeit"`                                           |
+| `tomcat_jmx_access_file`       | Path to the JMX access file                      | `"{{ tomcat_catalina_base }}/conf/jmxremote.access"`   |
+| `tomcat_jmx_password_file`     | Path to the JMX password file                    | `"{{ tomcat_catalina_base }}/conf/jmxremote.password"` |
 | `tomcat_jmx_force_credentials` | Force overwrite of existing JMX credential files | `false`                                                |
-
 
 ### Hardening
 
-| Variable                        | Description                                                | Default                                                   |
-| ------------------------------- | ---------------------------------------------------------- | --------------------------------------------------------- |
-| `tomcat_enable_hardening`       | Enable security hardening                                              | `true`                                                    |
-| `tomcat_default_apps_to_remove` | List of default apps to remove from CATALINA_HOME/webapps/             | `["ROOT", "manager", "host-manager", "docs", "examples"]` |
-| `tomcat_unpack_wars`            | `unpackWARs` attribute in the Host element of server.xml               | `false`                                                   |
-| `tomcat_auto_deploy`            | `autoDeploy` attribute in the Host element of server.xml               | `false`                                                   |
-| `tomcat_lockout_failure_count`  | Max consecutive failed auth attempts before lockout (CIS 5.2)          | `5`                                                       |
-| `tomcat_lockout_time`           | Lockout duration in seconds after exceeding failure count (CIS 5.2)    | `300`                                                     |
+| Variable                        | Description                                                         | Default                                                   |
+| ------------------------------- | ------------------------------------------------------------------- | --------------------------------------------------------- |
+| `tomcat_enable_hardening`       | Enable security hardening                                           | `true`                                                    |
+| `tomcat_default_apps_to_remove` | List of default apps to remove from CATALINA_HOME/webapps/          | `["ROOT", "manager", "host-manager", "docs", "examples"]` |
+| `tomcat_unpack_wars`            | `unpackWARs` attribute in the Host element of server.xml            | `false`                                                   |
+| `tomcat_auto_deploy`            | `autoDeploy` attribute in the Host element of server.xml            | `false`                                                   |
+| `tomcat_lockout_failure_count`  | Max consecutive failed auth attempts before lockout (CIS 5.2)       | `5`                                                       |
+| `tomcat_lockout_time`           | Lockout duration in seconds after exceeding failure count (CIS 5.2) | `300`                                                     |
 
 ### Systemd
 
-| Variable                      | Description                                       | Default    |
-| ----------------------------- | ------------------------------------------------- | ---------- |
-| `tomcat_service_name`         | Name of the systemd service unit                  | `"tomcat"` |
-| `tomcat_service_enabled`      | Enable automatic service start on system boot     | `true`     |
-| `tomcat_systemd_limit_nofile` | Maximum open file descriptors (`LimitNOFILE`)     | `65536`    |
-| `tomcat_systemd_restart_sec`  | Delay before restart after failure (`RestartSec`) | `10`       |
-| `tomcat_systemd_timeout_stop_sec` | Timeout before sending SIGKILL (`TimeoutStopSec`) | `90`       |
-| `tomcat_systemd_standard_output` | Destination for systemd standard output (stdout) | `"append:{{ tomcat_log_dir }}/catalina.out"` |
-| `tomcat_systemd_standard_error`  | Destination for systemd standard error (stderr) | `"append:{{ tomcat_log_dir }}/catalina.out"` |
-| `tomcat_systemd_extra_read_write_paths` | List of additional custom paths to allow Tomcat write access (appended to `ReadWritePaths`) | `[]` |
+| Variable                                | Description                                                                                 | Default                                      |
+| --------------------------------------- | ------------------------------------------------------------------------------------------- | -------------------------------------------- |
+| `tomcat_service_name`                   | Name of the systemd service unit                                                            | `"tomcat"`                                   |
+| `tomcat_service_enabled`                | Enable automatic service start on system boot                                               | `true`                                       |
+| `tomcat_systemd_limit_nofile`           | Maximum open file descriptors (`LimitNOFILE`)                                               | `65536`                                      |
+| `tomcat_systemd_restart_sec`            | Delay before restart after failure (`RestartSec`)                                           | `10`                                         |
+| `tomcat_systemd_timeout_stop_sec`       | Timeout before sending SIGKILL (`TimeoutStopSec`)                                           | `90`                                         |
+| `tomcat_systemd_standard_output`        | Destination for systemd standard output (stdout)                                            | `"append:{{ tomcat_log_dir }}/catalina.out"` |
+| `tomcat_systemd_standard_error`         | Destination for systemd standard error (stderr)                                             | `"append:{{ tomcat_log_dir }}/catalina.out"` |
+| `tomcat_systemd_extra_read_write_paths` | List of additional custom paths to allow Tomcat write access (appended to `ReadWritePaths`) | `[]`                                         |
 
 > **Note**: On EL8/EL9 with SELinux enforcing, the role automatically installs a custom SELinux policy module (`tomcat_systemd`) that allows `init_t` to write to `var_log_t` directories and execute files under `/opt/tomcat/`. No manual SELinux configuration is required.
 
@@ -379,10 +380,10 @@ tomcat_enable_ajp: false
 
 ### Logging
 
-| Variable                   | Description                                                                          | Default     |
-| -------------------------- | ------------------------------------------------------------------------------------ | ----------- |
-| `tomcat_configure_logging`  | Template a managed `logging.properties` into `CATALINA_BASE/conf/` (CIS 7.2)       | `true`      |
-| `tomcat_logging_level`      | Default log level for Tomcat internals (`SEVERE`/`WARNING`/`INFO`/`CONFIG`/`FINE`/`FINER`/`FINEST`) | `"INFO"` |
+| Variable                   | Description                                                                                         | Default  |
+| -------------------------- | --------------------------------------------------------------------------------------------------- | -------- |
+| `tomcat_configure_logging` | Template a managed `logging.properties` into `CATALINA_BASE/conf/` (CIS 7.2)                        | `true`   |
+| `tomcat_logging_level`     | Default log level for Tomcat internals (`SEVERE`/`WARNING`/`INFO`/`CONFIG`/`FINE`/`FINER`/`FINEST`) | `"INFO"` |
 
 ## 📌 Role Properties
 

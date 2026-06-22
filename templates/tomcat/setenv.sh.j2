@@ -52,9 +52,13 @@ CATALINA_OPTS="${CATALINA_OPTS} -Dcom.sun.management.jmxremote"
 CATALINA_OPTS="${CATALINA_OPTS} -Dcom.sun.management.jmxremote.port={{ tomcat_jmx_port }}"
 CATALINA_OPTS="${CATALINA_OPTS} -Dcom.sun.management.jmxremote.rmi.port={{ tomcat_jmx_rmi_port }}"
 CATALINA_OPTS="${CATALINA_OPTS} -Dcom.sun.management.jmxremote.ssl=false"
+{% if tomcat_jmx_authenticate | bool %}
 CATALINA_OPTS="${CATALINA_OPTS} -Dcom.sun.management.jmxremote.authenticate=true"
 CATALINA_OPTS="${CATALINA_OPTS} -Dcom.sun.management.jmxremote.access.file={{ tomcat_jmx_access_file }}"
 CATALINA_OPTS="${CATALINA_OPTS} -Dcom.sun.management.jmxremote.password.file={{ tomcat_jmx_password_file }}"
+{% else %}
+CATALINA_OPTS="${CATALINA_OPTS} -Dcom.sun.management.jmxremote.authenticate=false"
+{% endif %}
 CATALINA_OPTS="${CATALINA_OPTS} -Djava.rmi.server.hostname={{ tomcat_jmx_address }}"
 {% endif %}
 

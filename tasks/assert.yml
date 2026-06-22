@@ -122,7 +122,6 @@
 # --- Section 6: Java ---
 # JAVA_HOME validation moved to tasks/java_detect.yml (supports auto-detection)
 
-
 # --- Section 7: JVM & CATALINA_OPTS ---
 
 - name: Tomcat | assert | Validate JVM settings
@@ -374,7 +373,17 @@
   when:
     - tomcat_enable_jmx | bool
 
-- name: Tomcat | assert | Validate JMX details
+- name: Tomcat | assert | Validate JMX authentication toggle
+  ansible.builtin.assert:
+    that:
+      - tomcat_jmx_authenticate is defined
+      - tomcat_jmx_authenticate | type_debug in ['bool', 'AnsibleUnsafeText', 'str']
+    fail_msg: "tomcat_jmx_authenticate must be a boolean."
+    success_msg: "JMX authentication toggle validated: {{ tomcat_jmx_authenticate }}"
+  when:
+    - tomcat_enable_jmx | bool
+
+- name: Tomcat | assert | Validate JMX ports
   ansible.builtin.assert:
     that:
       - tomcat_jmx_port is defined
@@ -383,6 +392,14 @@
       - tomcat_jmx_rmi_port is defined
       - tomcat_jmx_rmi_port | int >= 1
       - tomcat_jmx_rmi_port | int <= 65535
+    fail_msg: "Invalid JMX settings. Ports must be 1-65535."
+    success_msg: "JMX ports validated: port={{ tomcat_jmx_port }}, rmi={{ tomcat_jmx_rmi_port }}"
+  when:
+    - tomcat_enable_jmx | bool
+
+- name: Tomcat | assert | Validate JMX authentication settings
+  ansible.builtin.assert:
+    that:
       - tomcat_jmx_role is defined
       - tomcat_jmx_role in ['readonly', 'readwrite']
       - tomcat_jmx_password is defined
@@ -394,10 +411,11 @@
       - tomcat_jmx_password_file is defined
       - tomcat_jmx_password_file is string
       - tomcat_jmx_password_file | length > 0
-    fail_msg: "Invalid JMX settings. Ports must be 1-65535, role must be 'readonly' or 'readwrite', password must be non-empty, file paths must be defined."
-    success_msg: "JMX settings validated: port={{ tomcat_jmx_port }}, rmi={{ tomcat_jmx_rmi_port }}, role={{ tomcat_jmx_role }}"
+    fail_msg: "Invalid JMX authentication settings. Role must be 'readonly' or 'readwrite', password must be non-empty, file paths must be defined."
+    success_msg: "JMX authentication settings validated: role={{ tomcat_jmx_role }}"
   when:
     - tomcat_enable_jmx | bool
+    - tomcat_jmx_authenticate | bool
 
 - name: Tomcat | assert | Validate JMX force credentials toggle
   ansible.builtin.assert:
@@ -408,7 +426,7 @@
     success_msg: "JMX force credentials toggle validated: {{ tomcat_jmx_force_credentials }}"
   when:
     - tomcat_enable_jmx | bool
-
+    - tomcat_jmx_authenticate | bool
 
 # --- Section 11: Hardening ---
 
