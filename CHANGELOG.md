@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.6.5](https://github.com/grzegorzfranus/ansible-role-apache-tomcat/compare/v0.6.4...v0.6.5) (2026-06-22)
+
+
+### Documentation
+
+* document tomcat_systemd_extra_read_write_paths in README ([#33](https://github.com/grzegorzfranus/ansible-role-apache-tomcat/issues/33)) ([7048efa](https://github.com/grzegorzfranus/ansible-role-apache-tomcat/commit/7048efaebdd45896c2f1485ced8d84415071c876))
+
 ## [0.6.4](https://github.com/grzegorzfranus/ansible-role-apache-tomcat/compare/v0.6.3...v0.6.4) (2026-06-22)
 
 
