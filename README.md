@@ -683,9 +683,18 @@ This role **does not** support automatic rollback. To revert to a previous versi
 
 ```
 ansible-role-apache-tomcat/
-├── .github/workflows/
-│   ├── ci.yml                         # CI pipeline
-│   └── release.yml                    # Release Please + Galaxy publish
+├── .github/
+│   ├── ISSUE_TEMPLATE/                # Issue templates for bug, feature, task
+│   │   ├── bug_report.yml
+│   │   ├── config.yml
+│   │   ├── feature_request.yml
+│   │   └── task.yml
+│   ├── PULL_REQUEST_TEMPLATE/         # Pull request description template
+│   │   └── pull_request_template.md
+│   ├── workflows/
+│   │   ├── ci.yml                     # CI pipeline
+│   │   └── release.yml                # Release Please + Galaxy publish
+│   └── dependabot.yml                 # Dependabot configuration for GitHub Actions
 ├── .ansible-lint                      # Ansible lint configuration
 ├── .gitignore                         # Git ignore rules
 ├── .release-please-manifest.json      # Release Please version manifest
