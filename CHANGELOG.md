@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.8.1](https://github.com/grzegorzfranus/ansible-role-apache-tomcat/compare/v0.8.0...v0.8.1) (2026-06-26)
+
+
+### Bug Fixes
+
+* **ci:** revert PR title regex to standard Conventional Commits ([#43](https://github.com/grzegorzfranus/ansible-role-apache-tomcat/issues/43)) ([ef0e014](https://github.com/grzegorzfranus/ansible-role-apache-tomcat/commit/ef0e0148637eb10d518ab8be21526592a3202f0a))
+
 ## [0.8.0](https://github.com/grzegorzfranus/ansible-role-apache-tomcat/compare/v0.7.0...v0.8.0) (2026-06-22)
 
 
