@@ -1,0 +1,6 @@
+---
+blank_issues_enabled: false
+contact_links:
+  - name: Apache Tomcat Role Documentation
+    url: https://github.com/grzegorzfranus/ansible-role-apache-tomcat#readme
+    about: Read the official documentation and conventions before opening an issue.

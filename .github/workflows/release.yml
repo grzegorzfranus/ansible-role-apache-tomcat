@@ -11,14 +11,7 @@ permissions:
   statuses: write
 
 jobs:
-  # ================================================================
-  # 1. RELEASE PLEASE
-  # ----------------------------------------------------------------
-  # Analyzes Conventional Commits since last release and creates
-  # or updates a Release PR. When the Release PR is merged, it
-  # creates a Git tag and GitHub Release automatically.
-  # Note: Commits must follow the Conventional Commits specification.
-  # ================================================================
+  # Analyze Conventional Commits to manage release PR, Git tags, and GitHub releases
   release-please:
     name: "Run Release Please"
     runs-on: ubuntu-latest
@@ -34,14 +27,7 @@ jobs:
           config-file: release-please-config.json
           manifest-file: .release-please-manifest.json
 
-  # ================================================================
-  # 2. VALIDATE RELEASE PR
-  # ----------------------------------------------------------------
-  # Runs basic validation on the Release PR branch and sets the
-  # required "Merge Check" commit status via the GitHub API.
-  # This is needed because PRs created by GITHUB_TOKEN do not
-  # trigger pull_request events in other workflows.
-  # ================================================================
+  # Validate Release PR branch and set "Merge Check" status via GitHub API
   validate-release-pr:
     name: "Validate Release PR"
     needs: [release-please]
@@ -116,16 +102,7 @@ jobs:
             -f description="All validations passed (Release PR)"
           echo "Set 'Merge Check' status on commit $PR_SHA"
 
-  # ================================================================
-  # 3. PUBLISH TO ANSIBLE GALAXY
-  # ----------------------------------------------------------------
-  # Triggered only when Release Please creates a GitHub Release
-  # (i.e., when the Release PR is merged). Uses the centralized
-  # reusable publish workflow with retry logic.
-  #
-  # This job lives here (not in a separate publish.yml) because
-  # events emitted by GITHUB_TOKEN do not trigger other workflows.
-  # ================================================================
+  # Publish role to Ansible Galaxy on release creation
   publish-to-galaxy:
     name: "Publish to Galaxy"
     needs: [release-please]
