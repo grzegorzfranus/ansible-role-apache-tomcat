@@ -28,7 +28,7 @@ jobs:
       release_created: ${{ steps.release.outputs.release_created }}
     steps:
       - name: "Run Release Please"
-        uses: googleapis/release-please-action@v4
+        uses: googleapis/release-please-action@45996ed1f6d02564a971a2fa1b5860e934307cf7 # v5.0.0
         id: release
         with:
           config-file: release-please-config.json
@@ -68,7 +68,7 @@ jobs:
           echo "sha=$PR_SHA" >> "$GITHUB_OUTPUT"
 
       - name: "Checkout Release PR branch"
-        uses: actions/checkout@v6
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
         with:
           ref: release-please--branches--main
 
@@ -129,8 +129,7 @@ jobs:
   publish-to-galaxy:
     name: "Publish to Galaxy"
     needs: [release-please]
-    # Temporarily disabled publishing to Galaxy
-    if: false
-    uses: grzegorzfranus/github-actions-workflows/.github/workflows/ansible-publish-galaxy.yml@main
+    if: needs.release-please.outputs.release_created == 'true'
+    uses: grzegorzfranus/github-workflows/.github/workflows/ansible-publish.yml@main
     secrets:
       galaxy-api-key: ${{ secrets.GALAXY_API_KEY }}
