@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.1.1](https://github.com/grzegorzfranus/ansible-role-apache-tomcat/compare/v1.1.0...v1.1.1) (2026-06-27)
+
+
+### Documentation
+
+* update file structure diagram to document github templates and dependabot ([#47](https://github.com/grzegorzfranus/ansible-role-apache-tomcat/issues/47)) ([271d27d](https://github.com/grzegorzfranus/ansible-role-apache-tomcat/commit/271d27dea851ec61a83dcd9c07e15f95f8a6812a))
+
 ## [1.1.0](https://github.com/grzegorzfranus/ansible-role-apache-tomcat/compare/v1.0.0...v1.1.0) (2026-06-26)
 
 
