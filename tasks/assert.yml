@@ -536,7 +536,8 @@
       - tomcat_logrotate_options.nocreate is defined
       - tomcat_logrotate_options.copytruncate is defined
       - tomcat_logrotate_options.dateext is defined
-    fail_msg: "Invalid logrotate settings. Frequency must be hourly/daily/weekly/monthly, count must be positive."
+      - tomcat_logrotate_options.su is not defined or tomcat_logrotate_options.su is boolean
+    fail_msg: "Invalid logrotate settings. Frequency must be hourly/daily/weekly/monthly, count must be positive, su must be boolean."
     success_msg: "Logrotate settings validated: frequency={{ tomcat_logrotate_options.frequency }}, count={{ tomcat_logrotate_options.count }}"
   when:
     - tomcat_configure_logrotate | bool
