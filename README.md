@@ -368,6 +368,7 @@ tomcat_enable_ajp: false
 | `tomcat_logrotate_options.nocreate`               | Do not create new empty log files after rotation                  | `true`                      |
 | `tomcat_logrotate_options.copytruncate`           | Use copytruncate (Tomcat holds open FDs)                          | `true`                      |
 | `tomcat_logrotate_options.dateext`                | Use date extension in rotated file names                          | `true`                      |
+| `tomcat_logrotate_options.su`                     | Enable su option in logrotate config                              | `true`                      |
 
 > **Note**: All log files use fixed names without date suffixes. JULI and AccessLogValve have `rotatable=false`. Logrotate is the single rotation mechanism, rotating files to `archive/` with `dateext` and `compress`. This ensures stable file paths for log aggregators (Filebeat, Splunk).
 

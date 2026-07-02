@@ -516,6 +516,7 @@ argument_specs:
           nocreate: true
           copytruncate: true
           dateext: true
+          su: true
         options:
           archive_directory_path:
             description: "Directory to move old log files to"
@@ -545,6 +546,9 @@ argument_specs:
             type: bool
           dateext:
             description: "Use date extension for rotated file names"
+            type: bool
+          su:
+            description: "Enable su option in logrotate config"
             type: bool
 
       # -----------------------------------------------------------------

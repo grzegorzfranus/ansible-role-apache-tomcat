@@ -11,7 +11,9 @@
 
 # --- Catalina console output (systemd stdout/stderr) ---
 {{ tomcat_log_dir }}/catalina.out {
+    {% if tomcat_logrotate_options.su | default(true) | bool %}
     su {{ tomcat_user }} {{ tomcat_group }}
+    {% endif %}
     {{ tomcat_logrotate_options.frequency }}
     rotate {{ tomcat_logrotate_options.count }}
     {% if tomcat_logrotate_options.missingok %}
@@ -32,7 +34,9 @@
 
 # --- JULI catalina.log (Tomcat internal logging) ---
 {{ tomcat_log_dir }}/catalina.log {
+    {% if tomcat_logrotate_options.su | default(true) | bool %}
     su {{ tomcat_user }} {{ tomcat_group }}
+    {% endif %}
     {{ tomcat_logrotate_options.frequency }}
     rotate {{ tomcat_logrotate_options.count }}
     {% if tomcat_logrotate_options.missingok %}
@@ -53,7 +57,9 @@
 
 # --- JULI localhost.log (web application errors) ---
 {{ tomcat_log_dir }}/localhost.log {
+    {% if tomcat_logrotate_options.su | default(true) | bool %}
     su {{ tomcat_user }} {{ tomcat_group }}
+    {% endif %}
     {{ tomcat_logrotate_options.frequency }}
     rotate {{ tomcat_logrotate_options.count }}
     {% if tomcat_logrotate_options.missingok %}
@@ -74,7 +80,9 @@
 
 # --- Access log (HTTP request log) ---
 {{ tomcat_log_dir }}/access.log {
+    {% if tomcat_logrotate_options.su | default(true) | bool %}
     su {{ tomcat_user }} {{ tomcat_group }}
+    {% endif %}
     {{ tomcat_logrotate_options.frequency }}
     rotate {{ tomcat_logrotate_options.count }}
     {% if tomcat_logrotate_options.missingok %}
@@ -96,7 +104,9 @@
 {% if tomcat_enable_gc_logging | bool %}
 # --- GC log (JVM garbage collection) ---
 {{ tomcat_log_dir }}/gc.log {
+    {% if tomcat_logrotate_options.su | default(true) | bool %}
     su {{ tomcat_user }} {{ tomcat_group }}
+    {% endif %}
     {{ tomcat_logrotate_options.frequency }}
     rotate {{ tomcat_logrotate_options.count }}
     {% if tomcat_logrotate_options.missingok %}
