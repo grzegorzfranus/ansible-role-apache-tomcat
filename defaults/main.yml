@@ -414,6 +414,7 @@ tomcat_logrotate_options:
   nocreate: true
   copytruncate: true
   dateext: true
+  su: true
 
 # -----------------------------------------------------------------------------
 # 14. Upgrade
