@@ -7,6 +7,7 @@
 #
 # Supported OS distributions:
 # - EL9: Rocky Linux 9, RHEL 9, AlmaLinux 9, CentOS Stream 9
+# - EL8: Rocky Linux 8, RHEL 8, AlmaLinux 8, CentOS Stream 8 (with constraints — see README)
 #
 # Sections:
 #   1. General Settings
@@ -242,7 +243,7 @@ tomcat_proxy_remote_ip_header: "X-Forwarded-For"
 tomcat_proxy_protocol_header: "X-Forwarded-Proto"
 
 # Whether to include the proxy IP address in the access log alongside the client IP
-# When true, the access log pattern will format as "%h %{org.apache.tomcat.remoteAddr}r ..."
+# When true, the access log pattern will format as "%{org.apache.tomcat.remoteAddr}r %l %u %t \"%r\" %s %b %D %h"
 tomcat_proxy_log_proxy_ip: false
 
 # -----------------------------------------------------------------------------
@@ -270,9 +271,7 @@ tomcat_ssl_enabled_protocols: "TLSv1.2+TLSv1.3"
 
 # Strong cipher suite for TLS 1.2 connections (OpenSSL naming)
 # TLS 1.3 ciphers are managed automatically by the JVM — do not include them here
-tomcat_ssl_ciphers: >-
-  ECDHE-ECDSA-AES256-GCM-SHA384:ECDHE-RSA-AES256-GCM-SHA384:
-  ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES128-GCM-SHA256
+tomcat_ssl_ciphers: "ECDHE-ECDSA-AES256-GCM-SHA384:ECDHE-RSA-AES256-GCM-SHA384:ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES128-GCM-SHA256"
 
 # Path on the Ansible control node to a custom keystore file (.p12)
 # If provided, the role copies this file to tomcat_ssl_keystore_file
@@ -282,6 +281,10 @@ tomcat_ssl_keystore_src: ""
 # Generate a self-signed PKCS12 keystore when no custom keystore is provided
 # Uses keytool on the target host (requires Java to be installed)
 tomcat_ssl_generate_self_signed: true
+
+# Force regeneration of the self-signed SSL keystore.
+# Set to true to regenerate the private key, CSR, cert, and PKCS12 keystore.
+tomcat_ssl_force_regenerate: false
 
 # Distinguished Name (DN) for the self-signed certificate
 tomcat_ssl_self_signed_dname: "CN=localhost,OU=IT,O=Organization,L=City,ST=State,C=US"
@@ -313,6 +316,9 @@ tomcat_jmx_authenticate: true
 
 # JMX role name (readonly or readwrite)
 tomcat_jmx_role: "readonly"
+
+# JMX remote username
+tomcat_jmx_user: "monitoring"
 
 
 # JMX password (override with Ansible Vault in production!)
@@ -380,11 +386,11 @@ tomcat_systemd_restart_sec: 10
 tomcat_systemd_timeout_stop_sec: 90
 
 # Destination for systemd standard output (stdout)
-# The role installs a custom SELinux policy module to allow init_t writes to var_log_t.
+# The role installs a custom SELinux policy module to allow init_t writes to tomcat_log_t.
 tomcat_systemd_standard_output: "append:{{ tomcat_log_dir }}/catalina.out"
 
 # Destination for systemd standard error (stderr)
-# The role installs a custom SELinux policy module to allow init_t writes to var_log_t.
+# The role installs a custom SELinux policy module to allow init_t writes to tomcat_log_t.
 tomcat_systemd_standard_error: "append:{{ tomcat_log_dir }}/catalina.out"
 
 # List of additional custom directory paths that the Tomcat service is allowed to write to.

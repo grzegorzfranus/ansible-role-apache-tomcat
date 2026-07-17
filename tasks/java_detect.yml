@@ -12,23 +12,38 @@
   when:
     - tomcat_java_home | default('') | length > 0
 
+# Justification: Use command module to find the path of the java executable in
+# the system PATH since there is no native Ansible module to locate binaries.
+- name: Tomcat | java_detect | Locate system java binary
+  ansible.builtin.command:
+    cmd: which java
+  register: __tomcat_java_which
+  failed_when: false
+  changed_when: false
+  when:
+    - tomcat_java_home | default('') | length == 0
+    - not ansible_check_mode
+
 # Justification: Use command module because ansible.builtin.stat cannot recursively
 # resolve multi-level symlink chains (e.g. /usr/bin/java → /etc/alternatives/java →
 # /usr/lib/jvm/java-17-openjdk-*/bin/java). readlink -f is the only reliable way.
 - name: Tomcat | java_detect | Resolve java binary real path
   become: true
   ansible.builtin.command:
-    cmd: readlink -f /usr/bin/java
+    cmd: "readlink -f {{ __tomcat_java_which.stdout }}"
   register: __tomcat_java_realpath
   changed_when: false
   when:
     - tomcat_java_home | default('') | length == 0
+    - not ansible_check_mode
+    - __tomcat_java_which.rc | default(1) == 0
 
 - name: Tomcat | java_detect | Set JAVA_HOME from detected path
   ansible.builtin.set_fact:
     __tomcat_java_home_detected: "{{ __tomcat_java_realpath.stdout | regex_replace('/bin/java$', '') }}"
   when:
     - tomcat_java_home | default('') | length == 0
+    - not ansible_check_mode
     - __tomcat_java_realpath.stdout is defined
 
 - name: Tomcat | java_detect | Validate detected JAVA_HOME exists
@@ -36,22 +51,26 @@
   ansible.builtin.stat:
     path: >-
       {{ tomcat_java_home if (tomcat_java_home | default('') | length > 0)
-         else __tomcat_java_home_detected }}/bin/java
+         else (__tomcat_java_home_detected | default('')) }}/bin/java
   register: __tomcat_java_binary_check
+  when:
+    - not ansible_check_mode
 
 - name: Tomcat | java_detect | Assert JAVA_HOME is valid
   ansible.builtin.assert:
     that:
-      - (tomcat_java_home | default('') | length > 0) or (__tomcat_java_home_detected | default('') | length > 0)
+      - (tomcat_java_home | default('') | length > 0) or
+        (not ansible_check_mode and (__tomcat_java_home_detected | default('') | length > 0)) or
+        (ansible_check_mode)
       - >-
         (tomcat_java_home if (tomcat_java_home | default('') | length > 0)
-         else __tomcat_java_home_detected) is match('^/')
-      - __tomcat_java_binary_check.stat.exists
+         else (__tomcat_java_home_detected | default(''))) is match('^/') or ansible_check_mode
+      - __tomcat_java_binary_check.stat.exists or ansible_check_mode
     fail_msg: >-
       JAVA_HOME detection failed. No java binary found.
       Ensure Java is installed or set 'tomcat_java_home' explicitly.
     success_msg: >-
       JAVA_HOME validated:
       {{ tomcat_java_home if (tomcat_java_home | default('') | length > 0)
-         else __tomcat_java_home_detected }}
+         else (__tomcat_java_home_detected | default('')) }}
       (mode: {{ 'user-provided' if (tomcat_java_home | default('') | length > 0) else 'runtime auto-detect' }})

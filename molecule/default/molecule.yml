@@ -23,8 +23,8 @@ provisioner:
   name: ansible
   playbooks:
     converge: ${MOLECULE_PLAYBOOK:-converge.yml}
-    verify: ${MOLECULE_PLAYBOOK:-verify.yml}
-    prepare: ${MOLECULE_PLAYBOOK:-prepare.yml}
+    verify: verify.yml
+    prepare: prepare.yml
   config_options:
     defaults:
       interpreter_python: auto_silent

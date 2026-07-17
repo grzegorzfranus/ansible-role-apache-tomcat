@@ -16,6 +16,8 @@
     owner: root
     group: "{{ tomcat_group }}"
     mode: "0640"
+    backup: true
+  no_log: true
   notify:
     - Tomcat | handlers | Restart Tomcat service
 
@@ -27,20 +29,9 @@
     owner: root
     group: "{{ tomcat_group }}"
     mode: "0640"
+    backup: true
   notify:
     - Tomcat | handlers | Restart Tomcat service
-
-- name: Tomcat | config | Ensure rewrite config directory exists
-  become: true
-  ansible.builtin.file:
-    path: "{{ tomcat_catalina_base }}/conf/Catalina/localhost"
-    state: directory
-    owner: "{{ tomcat_user }}"
-    group: "{{ tomcat_group }}"
-    mode: "0750"
-  when:
-    - (tomcat_enable_hardening | bool) or
-      (tomcat_enable_ssl | bool and tomcat_force_https | default(true) | bool and tomcat_enable_http | bool)
 
 - name: Tomcat | config | Template rewrite.config (method blocking / force HTTPS)
   become: true
@@ -50,6 +41,7 @@
     owner: root
     group: "{{ tomcat_group }}"
     mode: "0640"
+    backup: true
   when:
     - (tomcat_enable_hardening | bool) or
       (tomcat_enable_ssl | bool and tomcat_force_https | default(true) | bool and tomcat_enable_http | bool)
@@ -64,6 +56,7 @@
     owner: root
     group: "{{ tomcat_group }}"
     mode: "0750"
+    backup: true
   notify:
     - Tomcat | handlers | Restart Tomcat service
 
@@ -75,6 +68,7 @@
     owner: root
     group: "{{ tomcat_group }}"
     mode: "0640"
+    backup: true
   notify:
     - Tomcat | handlers | Restart Tomcat service
 
@@ -86,6 +80,7 @@
     owner: root
     group: "{{ tomcat_group }}"
     mode: "0640"
+    backup: true
   when:
     - tomcat_configure_logging | bool
   notify:
@@ -126,7 +121,7 @@
     - tomcat_enable_ssl | bool
     - tomcat_ssl_keystore_src | default('') | length == 0
     - tomcat_ssl_generate_self_signed | bool
-    - not (__tomcat_keystore_check.stat.exists | default(false))
+    - (tomcat_ssl_force_regenerate | bool) or not (__tomcat_keystore_check.stat.exists | default(false))
 
 - name: Tomcat | config | Generate self-signed private key
   become: true
@@ -141,7 +136,7 @@
     - tomcat_enable_ssl | bool
     - tomcat_ssl_keystore_src | default('') | length == 0
     - tomcat_ssl_generate_self_signed | bool
-    - not (__tomcat_keystore_check.stat.exists | default(false))
+    - (tomcat_ssl_force_regenerate | bool) or not (__tomcat_keystore_check.stat.exists | default(false))
 
 - name: Tomcat | config | Generate self-signed CSR
   become: true
@@ -161,7 +156,7 @@
     - tomcat_enable_ssl | bool
     - tomcat_ssl_keystore_src | default('') | length == 0
     - tomcat_ssl_generate_self_signed | bool
-    - not (__tomcat_keystore_check.stat.exists | default(false))
+    - (tomcat_ssl_force_regenerate | bool) or not (__tomcat_keystore_check.stat.exists | default(false))
 
 - name: Tomcat | config | Generate self-signed certificate
   become: true
@@ -178,7 +173,7 @@
     - tomcat_enable_ssl | bool
     - tomcat_ssl_keystore_src | default('') | length == 0
     - tomcat_ssl_generate_self_signed | bool
-    - not (__tomcat_keystore_check.stat.exists | default(false))
+    - (tomcat_ssl_force_regenerate | bool) or not (__tomcat_keystore_check.stat.exists | default(false))
 
 - name: Tomcat | config | Generate PKCS12 keystore from certificate
   become: true
@@ -197,7 +192,7 @@
     - tomcat_enable_ssl | bool
     - tomcat_ssl_keystore_src | default('') | length == 0
     - tomcat_ssl_generate_self_signed | bool
-    - not (__tomcat_keystore_check.stat.exists | default(false))
+    - (tomcat_ssl_force_regenerate | bool) or not (__tomcat_keystore_check.stat.exists | default(false))
   no_log: true
   notify:
     - Tomcat | handlers | Restart Tomcat service
@@ -215,7 +210,7 @@
     - tomcat_enable_ssl | bool
     - tomcat_ssl_keystore_src | default('') | length == 0
     - tomcat_ssl_generate_self_signed | bool
-    - not (__tomcat_keystore_check.stat.exists | default(false))
+    - (tomcat_ssl_force_regenerate | bool) or not (__tomcat_keystore_check.stat.exists | default(false))
   no_log: true
 
 # --- JMX security files ---

@@ -15,13 +15,15 @@
     recurse: false
   register: __tomcat_version_dirs
 
+# Justification: Use community.general.version_sort instead of lexicographical sort
+# to correctly order version strings numerically (otherwise '9.0.99' > '9.0.118').
 - name: Tomcat | cleanup | Build sorted list of old versions (excluding current)
   ansible.builtin.set_fact:
     __tomcat_old_versions: >-
       {{ __tomcat_version_dirs.files
          | map(attribute='path')
          | reject('equalto', tomcat_catalina_home)
-         | sort
+         | community.general.version_sort
          | reverse
          | list }}
 

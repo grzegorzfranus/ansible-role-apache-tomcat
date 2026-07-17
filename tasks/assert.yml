@@ -346,8 +346,10 @@
       - tomcat_ssl_self_signed_dname is defined
       - tomcat_ssl_self_signed_dname is string
       - tomcat_ssl_self_signed_dname | length > 0
-    fail_msg: "Invalid self-signed certificate settings. Validity must be a positive integer, dname must be a non-empty string."
-    success_msg: "Self-signed settings validated: validity={{ tomcat_ssl_self_signed_validity }} days"
+      - tomcat_ssl_force_regenerate is defined
+      - tomcat_ssl_force_regenerate | type_debug in ['bool', 'AnsibleUnsafeText', 'str']
+    fail_msg: "Invalid self-signed certificate settings. Validity must be a positive integer, dname must be a non-empty string, force_regenerate must be a boolean."
+    success_msg: "Self-signed settings validated: validity={{ tomcat_ssl_self_signed_validity }} days, force_regenerate={{ tomcat_ssl_force_regenerate }}"
   when:
     - tomcat_enable_ssl | bool
     - tomcat_ssl_keystore_src | default('') | length == 0
@@ -402,6 +404,9 @@
     that:
       - tomcat_jmx_role is defined
       - tomcat_jmx_role in ['readonly', 'readwrite']
+      - tomcat_jmx_user is defined
+      - tomcat_jmx_user is string
+      - tomcat_jmx_user | length > 0
       - tomcat_jmx_password is defined
       - tomcat_jmx_password is string
       - tomcat_jmx_password | length > 0
@@ -411,8 +416,8 @@
       - tomcat_jmx_password_file is defined
       - tomcat_jmx_password_file is string
       - tomcat_jmx_password_file | length > 0
-    fail_msg: "Invalid JMX authentication settings. Role must be 'readonly' or 'readwrite', password must be non-empty, file paths must be defined."
-    success_msg: "JMX authentication settings validated: role={{ tomcat_jmx_role }}"
+    fail_msg: "Invalid JMX authentication settings. Role must be 'readonly' or 'readwrite', user must be non-empty string, password must be non-empty, file paths must be defined."
+    success_msg: "JMX authentication settings validated: user={{ tomcat_jmx_user }}, role={{ tomcat_jmx_role }}"
   when:
     - tomcat_enable_jmx | bool
     - tomcat_jmx_authenticate | bool

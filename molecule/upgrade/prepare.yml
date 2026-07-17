@@ -15,9 +15,11 @@
         update_cache: true
       changed_when: false
 
-    - name: Prepare | Install Java JDK
+    - name: Prepare | Install packages (Java JDK and Logrotate)
       ansible.builtin.dnf:
-        name: java-17-openjdk-headless
+        name:
+          - java-17-openjdk-headless
+          - logrotate
         state: present
 
     - name: Prepare | Wait for systemd to complete initialization
@@ -25,10 +27,9 @@
         name: multi-user.target
         state: started
       register: systemctl_status
-      until: true
+      until: systemctl_status is succeeded
       retries: 30
       delay: 5
       when:
         - ansible_facts['service_mgr'] == 'systemd'
       changed_when: false
-      failed_when: false

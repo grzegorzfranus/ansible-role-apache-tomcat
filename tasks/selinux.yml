@@ -21,6 +21,33 @@
     group: root
     mode: "0755"
 
+- name: Tomcat | selinux | Set file context for tomcat log directory
+  become: true
+  community.general.sefcontext:
+    target: "{{ tomcat_log_dir }}(/.*)?"
+    setype: tomcat_log_t
+    state: present
+  register: __tomcat_log_sefcontext
+
+- name: Tomcat | selinux | Set file context for tomcat install directory symlink
+  become: true
+  community.general.sefcontext:
+    target: "{{ tomcat_install_dir }}/current"
+    setype: tomcat_var_lib_t
+    state: present
+  register: __tomcat_install_sefcontext
+
+# Justification: Use command module to run restorecon as there is no native
+# Ansible module to recursively restore file security contexts.
+- name: Tomcat | selinux | Apply new SELinux file contexts (restorecon)
+  become: true
+  ansible.builtin.command:
+    cmd: "restorecon -Rv {{ tomcat_log_dir }} {{ tomcat_install_dir }}/current"
+  register: __tomcat_restorecon
+  changed_when: __tomcat_restorecon.stdout | length > 0
+  when:
+    - __tomcat_log_sefcontext is changed or __tomcat_install_sefcontext is changed
+
 - name: Tomcat | selinux | Template custom SELinux policy source
   become: true
   ansible.builtin.template:
