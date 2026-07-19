@@ -108,6 +108,24 @@
         fail_msg: "server.xml does not reference new version {{ tomcat_new_version }}"
         success_msg: "server.xml updated to {{ tomcat_new_version }}"
 
+    - name: Verify | Check if Tomcat service is active
+      ansible.builtin.command: systemctl is-active tomcat
+      register: __verify_tomcat_active
+      changed_when: false
+      failed_when: false
+
+    - name: Verify | Assert Tomcat service is active
+      ansible.builtin.assert:
+        that:
+          - __verify_tomcat_active.rc == 0
+        fail_msg: "Tomcat service is not active"
+        success_msg: "Tomcat service is active"
+
+    - name: Verify | Wait for Tomcat port 8443 (HTTPS)
+      ansible.builtin.wait_for:
+        port: 8443
+        timeout: 60
+
     - name: Verify | All upgrade checks completed successfully
       ansible.builtin.debug:
         msg: "All Apache Tomcat upgrade scenario verification checks passed"

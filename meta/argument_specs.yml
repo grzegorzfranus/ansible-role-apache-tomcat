@@ -164,7 +164,7 @@ argument_specs:
       tomcat_gc_log_opts:
         description: "GC logging JVM flags appended to CATALINA_OPTS when GC logging is enabled"
         type: str
-        default: "-Xlog:gc*:file={{ tomcat_log_dir }}/gc.log:time,uptime,level,tags"
+        default: "-Xlog:gc*:file={{ tomcat_log_dir }}/gc.log:time,uptime,level,tags:filecount=0,filesize=0"
 
       # -----------------------------------------------------------------
       # 8. Network & SSL
@@ -343,6 +343,11 @@ argument_specs:
         type: bool
         default: true
 
+      tomcat_ssl_force_regenerate:
+        description: "Force regeneration of the self-signed SSL keystore"
+        type: bool
+        default: false
+
       tomcat_ssl_self_signed_dname:
         description: "Distinguished Name (DN) for the self-signed certificate"
         type: str
@@ -383,12 +388,16 @@ argument_specs:
 
       tomcat_jmx_role:
         description: "JMX role name"
-
         type: str
         default: "readonly"
         choices:
           - readonly
           - readwrite
+
+      tomcat_jmx_user:
+        description: "Username for JMX remote monitoring"
+        type: str
+        default: "monitoring"
 
       tomcat_jmx_password:
         description: "JMX password (override with Ansible Vault!)"

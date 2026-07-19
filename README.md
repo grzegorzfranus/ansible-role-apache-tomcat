@@ -86,6 +86,12 @@ This Ansible role deploys Apache Tomcat using the **Enterprise Split Tomcat** ar
 >   - To run on EL8 with the system's default Python 3.6, you must use `ansible-core` <= 2.16.
 >   - If running `ansible-core` >= 2.17, EL8 targets require Python >= 3.7. However, the system `python3-dnf` package manager bindings on EL8 are compiled exclusively for Python 3.6 and will not be available on newer Python interpreters. This will cause tasks using the `dnf` module (such as installing SELinux utilities or package updates) to fail.
 > - **Molecule Testing**: Due to these Python version compatibility constraints, EL8 is not officially tested in the role's Molecule test suite (which runs a newer Ansible version in CI).
+> - **systemd 239 limitations**: EL8 ships systemd 239, while the role's default unit template uses
+>   `Type=exec` and `StandardOutput=append:` / `StandardError=append:`, which require systemd >= 240.
+>   On EL8 the default unit will fail to start. To run on EL8 you must:
+>   - override `tomcat_systemd_standard_output` / `tomcat_systemd_standard_error` (e.g. `journal`), and
+>   - provide a custom unit with `Type=simple` (the template's `Type=exec` is not recognized by systemd 239).
+>   EL9 (systemd 252) is unaffected.
 
 ### Ansible version
 
@@ -311,6 +317,7 @@ tomcat_enable_ajp: false
 | `tomcat_ssl_ciphers`              | Strong cipher suite for TLS connections                               | (see defaults)                                             |
 | `tomcat_ssl_keystore_src`         | Path on control node to a custom `.p12` file. Empty = use self-signed | `""`                                                       |
 | `tomcat_ssl_generate_self_signed` | Generate a self-signed keystore when no custom keystore is provided   | `true`                                                     |
+| `tomcat_ssl_force_regenerate`     | Force regeneration of the self-signed SSL keystore                    | `false`                                                    |
 | `tomcat_ssl_self_signed_dname`    | Distinguished Name for the self-signed certificate                    | `"CN=localhost,OU=IT,O=Organization,L=City,ST=State,C=US"` |
 | `tomcat_ssl_self_signed_validity` | Validity period of the self-signed certificate in days                | `365`                                                      |
 
@@ -323,11 +330,16 @@ tomcat_enable_ajp: false
 | `tomcat_jmx_rmi_port`          | JMX RMI server port                              | `9091`                                                 |
 | `tomcat_jmx_address`           | JMX RMI server hostname / listen address         | `"localhost"`                                          |
 | `tomcat_jmx_authenticate`      | Require authentication for remote JMX monitoring | `true`                                                 |
+| `tomcat_jmx_user`              | Username for JMX remote monitoring               | `"monitoring"`                                         |
 | `tomcat_jmx_role`              | JMX role name (`readonly` or `readwrite`)        | `"readonly"`                                           |
 | `tomcat_jmx_password`          | JMX password (override with Ansible Vault!)      | `"changeit"`                                           |
 | `tomcat_jmx_access_file`       | Path to the JMX access file                      | `"{{ tomcat_catalina_base }}/conf/jmxremote.access"`   |
 | `tomcat_jmx_password_file`     | Path to the JMX password file                    | `"{{ tomcat_catalina_base }}/conf/jmxremote.password"` |
 | `tomcat_jmx_force_credentials` | Force overwrite of existing JMX credential files | `false`                                                |
+
+> [!WARNING]
+> **Breaking Change**: JMX monitoring now uses `tomcat_jmx_user` (default: `"monitoring"`) for the first column (username) in access and password files, rather than reusing `tomcat_jmx_role` ("readonly" / "readwrite"). Existing files on the target hosts will not be overwritten with the new username unless `tomcat_jmx_force_credentials` is set to `true`.
+
 
 ### Hardening
 
@@ -497,7 +509,7 @@ Upgrading Apache Tomcat requires only a version variable change — the Split To
 - ✅ **Applications survive**: `webapps/` is in CATALINA_BASE, never touched during upgrade
 - ✅ **Configuration preserved**: `conf/` is re-rendered from templates (always current)
 - ✅ **Rollback ready**: Previous CATALINA_HOME directories remain on disk (configurable retention)
-- ✅ **Keystore preserved**: SSL keystore in CATALINA_BASE is not regenerated if it exists
+- ✅ **Keystore preserved**: SSL keystore in CATALINA_BASE is not regenerated if it exists. Note that changing the keystore password or renewing an expired self-signed certificate (after `tomcat_ssl_self_signed_validity` days) requires setting `tomcat_ssl_force_regenerate: true` for a single run to force regeneration.
 
 ### Old Version Cleanup
 
@@ -531,7 +543,7 @@ The current version is **always preserved** — `tomcat_keep_old_versions` contr
 - ✅ **Reverse Proxy Awareness**: `RemoteIpValve` with configurable trusted proxies and `X-Forwarded-*` headers
 - ✅ **Shutdown Port Disabled**: `shutdown_port=-1` prevents remote shutdown attacks
 - ✅ **Systemd Hardening**: `Type=exec`, `ProtectSystem=strict`, `PrivateTmp`, `NoNewPrivileges`, journal logging
-- ✅ **SELinux Support**: Automatic file context labeling (`tomcat_log_t`, `tomcat_exec_t`, `tomcat_var_lib_t`) on EL8/EL9 with SELinux enforcing — no manual `audit2allow` required
+- ✅ **SELinux Support**: Automatic file context labeling (`tomcat_log_t`, `tomcat_var_lib_t`) on EL8/EL9 with SELinux enforcing — no manual `audit2allow` required
 - ✅ **JMX Security**: Access and password files with `chmod 400`
 - ✅ **Ansible Vault**: All passwords (`keystore`, `JMX`, `AJP secret`) designed for Vault override
 - ✅ **no_log**: Sensitive tasks (keystore generation, JMX files, SSH keys, AJP secret) use `no_log: true`

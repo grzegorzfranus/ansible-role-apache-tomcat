@@ -9,119 +9,44 @@
 # Rotated files are compressed and moved to the archive directory.
 # =============================================================================
 
-# --- Catalina console output (systemd stdout/stderr) ---
-{{ tomcat_log_dir }}/catalina.out {
+{% set __tomcat_log_files = [
+    'catalina.out',
+    'catalina.log',
+    'localhost.log',
+    'access.log'
+] + (['gc.log'] if tomcat_enable_gc_logging | bool else []) %}
+{% for log_file in __tomcat_log_files %}
+# Logrotate configuration for {{ log_file }}
+{{ tomcat_log_dir }}/{{ log_file }} {
     {% if tomcat_logrotate_options.su | default(true) | bool %}
     su {{ tomcat_user }} {{ tomcat_group }}
     {% endif %}
     {{ tomcat_logrotate_options.frequency }}
     rotate {{ tomcat_logrotate_options.count }}
-    {% if tomcat_logrotate_options.missingok %}
+    {% if tomcat_logrotate_options.missingok | bool %}
     missingok
     {% endif %}
-    {% if tomcat_logrotate_options.compress %}
+    {% if tomcat_logrotate_options.compress | bool %}
     compress
     {% endif %}
+    {% if tomcat_logrotate_options.copytruncate | default(true) | bool %}
     copytruncate
-    {% if tomcat_logrotate_options.dateext %}
+    {% elif tomcat_logrotate_options.nocreate | default(true) | bool %}
+    nocreate
+    {% endif %}
+    {% if tomcat_logrotate_options.dateext | bool %}
     dateext
+    {% if tomcat_logrotate_options.frequency == 'hourly' %}
+    dateformat .%Y-%m-%d-%H
+    {% else %}
     dateformat .%Y-%m-%d
+    {% endif %}
     {% endif %}
     {% if tomcat_logrotate_options.archive_directory_path is defined and tomcat_logrotate_options.archive_directory_path | length > 0 %}
     olddir {{ tomcat_logrotate_options.archive_directory_path }}
     {% endif %}
 }
+{% if not loop.last %}
 
-# --- JULI catalina.log (Tomcat internal logging) ---
-{{ tomcat_log_dir }}/catalina.log {
-    {% if tomcat_logrotate_options.su | default(true) | bool %}
-    su {{ tomcat_user }} {{ tomcat_group }}
-    {% endif %}
-    {{ tomcat_logrotate_options.frequency }}
-    rotate {{ tomcat_logrotate_options.count }}
-    {% if tomcat_logrotate_options.missingok %}
-    missingok
-    {% endif %}
-    {% if tomcat_logrotate_options.compress %}
-    compress
-    {% endif %}
-    copytruncate
-    {% if tomcat_logrotate_options.dateext %}
-    dateext
-    dateformat .%Y-%m-%d
-    {% endif %}
-    {% if tomcat_logrotate_options.archive_directory_path is defined and tomcat_logrotate_options.archive_directory_path | length > 0 %}
-    olddir {{ tomcat_logrotate_options.archive_directory_path }}
-    {% endif %}
-}
-
-# --- JULI localhost.log (web application errors) ---
-{{ tomcat_log_dir }}/localhost.log {
-    {% if tomcat_logrotate_options.su | default(true) | bool %}
-    su {{ tomcat_user }} {{ tomcat_group }}
-    {% endif %}
-    {{ tomcat_logrotate_options.frequency }}
-    rotate {{ tomcat_logrotate_options.count }}
-    {% if tomcat_logrotate_options.missingok %}
-    missingok
-    {% endif %}
-    {% if tomcat_logrotate_options.compress %}
-    compress
-    {% endif %}
-    copytruncate
-    {% if tomcat_logrotate_options.dateext %}
-    dateext
-    dateformat .%Y-%m-%d
-    {% endif %}
-    {% if tomcat_logrotate_options.archive_directory_path is defined and tomcat_logrotate_options.archive_directory_path | length > 0 %}
-    olddir {{ tomcat_logrotate_options.archive_directory_path }}
-    {% endif %}
-}
-
-# --- Access log (HTTP request log) ---
-{{ tomcat_log_dir }}/access.log {
-    {% if tomcat_logrotate_options.su | default(true) | bool %}
-    su {{ tomcat_user }} {{ tomcat_group }}
-    {% endif %}
-    {{ tomcat_logrotate_options.frequency }}
-    rotate {{ tomcat_logrotate_options.count }}
-    {% if tomcat_logrotate_options.missingok %}
-    missingok
-    {% endif %}
-    {% if tomcat_logrotate_options.compress %}
-    compress
-    {% endif %}
-    copytruncate
-    {% if tomcat_logrotate_options.dateext %}
-    dateext
-    dateformat .%Y-%m-%d
-    {% endif %}
-    {% if tomcat_logrotate_options.archive_directory_path is defined and tomcat_logrotate_options.archive_directory_path | length > 0 %}
-    olddir {{ tomcat_logrotate_options.archive_directory_path }}
-    {% endif %}
-}
-
-{% if tomcat_enable_gc_logging | bool %}
-# --- GC log (JVM garbage collection) ---
-{{ tomcat_log_dir }}/gc.log {
-    {% if tomcat_logrotate_options.su | default(true) | bool %}
-    su {{ tomcat_user }} {{ tomcat_group }}
-    {% endif %}
-    {{ tomcat_logrotate_options.frequency }}
-    rotate {{ tomcat_logrotate_options.count }}
-    {% if tomcat_logrotate_options.missingok %}
-    missingok
-    {% endif %}
-    {% if tomcat_logrotate_options.compress %}
-    compress
-    {% endif %}
-    copytruncate
-    {% if tomcat_logrotate_options.dateext %}
-    dateext
-    dateformat .%Y-%m-%d
-    {% endif %}
-    {% if tomcat_logrotate_options.archive_directory_path is defined and tomcat_logrotate_options.archive_directory_path | length > 0 %}
-    olddir {{ tomcat_logrotate_options.archive_directory_path }}
-    {% endif %}
-}
 {% endif %}
+{% endfor %}
