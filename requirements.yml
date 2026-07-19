@@ -1,0 +1,12 @@
+---
+# =============================================================================
+# Ansible Role: Apache Tomcat - Requirements
+# =============================================================================
+# This file defines the external collection dependencies required by the
+# Apache Tomcat role.
+# =============================================================================
+
+collections:
+  - name: ansible.posix
+  - name: community.crypto
+  - name: community.general
