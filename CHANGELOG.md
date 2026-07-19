@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.2.1](https://github.com/grzegorzfranus/ansible-role-apache-tomcat/compare/v1.2.0...v1.2.1) (2026-07-19)
+
+
+### Bug Fixes
+
+* resolve tag inheritance, version sorting, logrotate and jmx user… ([#51](https://github.com/grzegorzfranus/ansible-role-apache-tomcat/issues/51)) ([de2cfac](https://github.com/grzegorzfranus/ansible-role-apache-tomcat/commit/de2cfac535fe2f440f58520486878af331882009))
+
 ## [1.2.0](https://github.com/grzegorzfranus/ansible-role-apache-tomcat/compare/v1.1.1...v1.2.0) (2026-07-02)
 
 
