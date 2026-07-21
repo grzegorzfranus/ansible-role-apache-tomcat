@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.2.2](https://github.com/grzegorzfranus/ansible-role-apache-tomcat/compare/v1.2.1...v1.2.2) (2026-07-21)
+
+
+### CI/CD
+
+* **53:** upgrade github workflows to v3.0.1 and update documentation ([#54](https://github.com/grzegorzfranus/ansible-role-apache-tomcat/issues/54)) ([e37b02b](https://github.com/grzegorzfranus/ansible-role-apache-tomcat/commit/e37b02bce7d3dab4fe8a6368fb536dddb5749691))
+
 ## [1.2.1](https://github.com/grzegorzfranus/ansible-role-apache-tomcat/compare/v1.2.0...v1.2.1) (2026-07-19)
 
 
