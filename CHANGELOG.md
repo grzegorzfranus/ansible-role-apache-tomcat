@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.2.4](https://github.com/grzegorzfranus/ansible-role-apache-tomcat/compare/v1.2.3...v1.2.4) (2026-10-24)
+
+
+### Documentation
+
+* **readme:** describe the current CI and release pipelines ([#62](https://github.com/grzegorzfranus/ansible-role-apache-tomcat/issues/62)) ([#63](https://github.com/grzegorzfranus/ansible-role-apache-tomcat/issues/63)) ([a72c432](https://github.com/grzegorzfranus/ansible-role-apache-tomcat/commit/a72c4326f2e088cabe07ed7180b1299016e49752))
+
 ## [1.2.3](https://github.com/grzegorzfranus/ansible-role-apache-tomcat/compare/v1.2.2...v1.2.3) (2026-10-24)
 
 
