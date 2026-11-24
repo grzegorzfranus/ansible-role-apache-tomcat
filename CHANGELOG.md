@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.3.0](https://github.com/grzegorzfranus/ansible-role-apache-tomcat/compare/v1.2.4...v1.3.0) (2026-11-24)
+
+
+### Features
+
+* add support for installing Tomcat from a local archive ([#65](https://github.com/grzegorzfranus/ansible-role-apache-tomcat/issues/65)) ([a71d0f6](https://github.com/grzegorzfranus/ansible-role-apache-tomcat/commit/a71d0f6cf2aa746b699710a94cc202b63301ea57))
+
 ## [1.2.4](https://github.com/grzegorzfranus/ansible-role-apache-tomcat/compare/v1.2.3...v1.2.4) (2026-10-24)
 
 
