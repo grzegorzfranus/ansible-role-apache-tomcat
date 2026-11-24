@@ -2,8 +2,9 @@
 # =============================================================================
 # Ansible Role: Apache Tomcat - Tasks: Install
 # =============================================================================
-# Downloads the Tomcat archive (from custom URL or Apache Archive), extracts
-# it to CATALINA_HOME, sets root ownership, and manages the version symlink.
+# Installs Tomcat from either a URL download (custom URL or Apache Archive) or
+# a pre-staged local archive on the target host, extracts it to CATALINA_HOME,
+# sets root ownership, and manages the version symlink.
 # =============================================================================
 
 - name: Tomcat | install | Create installation directory
@@ -23,6 +24,8 @@
          else 'https://archive.apache.org/dist/tomcat/tomcat-'
               ~ tomcat_major_version ~ '/v' ~ tomcat_version
               ~ '/bin/apache-tomcat-' ~ tomcat_version ~ '.tar.gz' }}
+  when:
+    - tomcat_local_archive_path | default('') | length == 0
 
 - name: Tomcat | install | Check if CATALINA_HOME already exists
   become: true
@@ -44,11 +47,54 @@
   until: __tomcat_download_result is succeeded
   when:
     - not __tomcat_catalina_home_check.stat.exists
+    - tomcat_local_archive_path | default('') | length == 0
+
+- name: Tomcat | install | Check local Tomcat archive
+  become: true
+  ansible.builtin.stat:
+    path: "{{ tomcat_local_archive_path }}"
+    follow: true
+    get_checksum: "{{ (tomcat_download_checksum | default('') | length > 0) | bool }}"
+    checksum_algorithm: >-
+      {{ (tomcat_download_checksum.split(':')[0] | lower)
+         if (tomcat_download_checksum | default('') | length > 0)
+         else 'sha256' }}
+  register: __tomcat_local_archive_check
+  when:
+    - not __tomcat_catalina_home_check.stat.exists
+    - tomcat_local_archive_path | default('') | length > 0
+
+- name: Tomcat | install | Verify local Tomcat archive exists
+  ansible.builtin.assert:
+    that:
+      - __tomcat_local_archive_check.stat.exists
+      - __tomcat_local_archive_check.stat.isreg
+    fail_msg: "Local Tomcat archive not found or is not a regular file: {{ tomcat_local_archive_path }}"
+    success_msg: "Local Tomcat archive verified: {{ tomcat_local_archive_path }}"
+  when:
+    - not __tomcat_catalina_home_check.stat.exists
+    - tomcat_local_archive_path | default('') | length > 0
+
+- name: Tomcat | install | Verify local Tomcat archive checksum
+  ansible.builtin.assert:
+    that:
+      - (__tomcat_local_archive_check.stat.checksum | lower) == (tomcat_download_checksum.split(':', 1)[1] | lower)
+    fail_msg: >-
+      Local Tomcat archive checksum mismatch for {{ tomcat_local_archive_path }}.
+      Expected {{ tomcat_download_checksum }}, got {{ __tomcat_local_archive_check.stat.checksum | default('none') }}.
+    success_msg: "Local Tomcat archive checksum verified ({{ tomcat_download_checksum.split(':')[0] | lower }})"
+  when:
+    - not __tomcat_catalina_home_check.stat.exists
+    - tomcat_local_archive_path | default('') | length > 0
+    - tomcat_download_checksum | default('') | length > 0
 
 - name: Tomcat | install | Extract Tomcat archive
   become: true
   ansible.builtin.unarchive:
-    src: "{{ tomcat_download_tmp_dir }}/apache-tomcat-{{ tomcat_version }}.tar.gz"
+    src: >-
+      {{ tomcat_local_archive_path
+         if (tomcat_local_archive_path | default('') | length > 0)
+         else tomcat_download_tmp_dir ~ '/apache-tomcat-' ~ tomcat_version ~ '.tar.gz' }}
     dest: "{{ tomcat_install_dir }}"
     remote_src: true
     creates: "{{ tomcat_catalina_home }}/bin/catalina.sh"
@@ -142,3 +188,4 @@
     state: absent
   when:
     - not __tomcat_catalina_home_check.stat.exists
+    - tomcat_local_archive_path | default('') | length == 0

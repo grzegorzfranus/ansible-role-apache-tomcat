@@ -1,0 +1,56 @@
+---
+# Apache Tomcat Molecule — Prepare for local-archive scenario.
+
+- name: Molecule | Prepare
+  hosts: all
+
+  tasks:
+    - name: Prepare | Fix /etc/shadow permissions
+      ansible.builtin.file:
+        path: /etc/shadow
+        mode: "0400"
+
+    - name: Prepare | Update dnf cache
+      ansible.builtin.dnf:
+        update_cache: true
+      changed_when: false
+
+    - name: Prepare | Install packages (Java JDK and Logrotate)
+      ansible.builtin.dnf:
+        name:
+          - java-17-openjdk-headless
+          - logrotate
+        state: present
+
+    - name: Prepare | Wait for systemd to complete initialization
+      ansible.builtin.systemd:
+        name: multi-user.target
+        state: started
+      register: systemctl_status
+      until: systemctl_status is succeeded
+      retries: 30
+      delay: 5
+      when:
+        - ansible_facts['service_mgr'] == 'systemd'
+      changed_when: false
+
+    - name: Prepare | Create local packages directory
+      ansible.builtin.file:
+        path: /opt/packages
+        state: directory
+        owner: root
+        group: root
+        mode: "0755"
+
+    - name: Prepare | Pre-stage Apache Tomcat archive locally
+      ansible.builtin.get_url:
+        url: "https://archive.apache.org/dist/tomcat/tomcat-9/v9.0.118/bin/apache-tomcat-9.0.118.tar.gz"
+        dest: /opt/packages/apache-tomcat-9.0.118.tar.gz
+        owner: root
+        group: root
+        mode: "0644"
+        timeout: 60
+      register: __prepare_tomcat_download
+      retries: 3
+      delay: 5
+      until: __prepare_tomcat_download is succeeded

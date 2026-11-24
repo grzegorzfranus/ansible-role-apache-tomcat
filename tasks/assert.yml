@@ -110,14 +110,46 @@
   ansible.builtin.assert:
     that:
       - tomcat_custom_download_url is defined
+      - tomcat_local_archive_path is defined
+      - tomcat_local_archive_path is string
       - tomcat_download_checksum is defined
       - tomcat_download_timeout is defined
       - tomcat_download_timeout | int > 0
       - tomcat_download_tmp_dir is defined
       - tomcat_download_tmp_dir is string
       - tomcat_download_tmp_dir is match('^/')
-    fail_msg: "Invalid download settings. Timeout must be a positive integer, tmp_dir must be an absolute path."
+    fail_msg: >-
+      Invalid download settings. tomcat_local_archive_path must be a string,
+      timeout must be a positive integer, and tmp_dir must be an absolute path.
     success_msg: "Download settings validated: timeout={{ tomcat_download_timeout }}s"
+
+- name: Tomcat | assert | Validate local archive path is absolute
+  ansible.builtin.assert:
+    that:
+      - tomcat_local_archive_path is match('^/')
+    fail_msg: "tomcat_local_archive_path must be an absolute path starting with '/'."
+    success_msg: "Local archive path validated: {{ tomcat_local_archive_path }}"
+  when:
+    - tomcat_local_archive_path | length > 0
+
+- name: Tomcat | assert | Validate download source mutual exclusivity
+  ansible.builtin.assert:
+    that:
+      - tomcat_custom_download_url | default('') | length == 0
+    fail_msg: "tomcat_local_archive_path and tomcat_custom_download_url are mutually exclusive; set only one."
+    success_msg: "Download source exclusivity validated (using local archive)"
+  when:
+    - tomcat_local_archive_path | length > 0
+
+- name: Tomcat | assert | Validate local archive checksum format
+  ansible.builtin.assert:
+    that:
+      - tomcat_download_checksum is match('^(md5|sha1|sha224|sha256|sha384|sha512):[0-9a-fA-F]+$')
+    fail_msg: "tomcat_download_checksum must match '<algorithm>:<hex_digest>' (md5, sha1, sha224, sha256, sha384, or sha512)."
+    success_msg: "Local archive checksum format validated"
+  when:
+    - tomcat_local_archive_path | length > 0
+    - tomcat_download_checksum | default('') | length > 0
 
 # --- Section 6: Java ---
 # JAVA_HOME validation moved to tasks/java_detect.yml (supports auto-detection)
