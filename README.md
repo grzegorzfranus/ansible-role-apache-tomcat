@@ -20,7 +20,7 @@ This Ansible role deploys Apache Tomcat using the **Enterprise Split Tomcat** ar
 - 📊 **JMX Monitoring**: Secured JMX remote access with `.access` and `.password` files (chmod 400)
 - ⚙️ **Hardened Systemd**: `Type=exec` foreground mode, `ProtectSystem=strict`, `PrivateTmp`, `NoNewPrivileges`, journal logging
 - 📁 **Dedicated Logging**: Separate log directory (`/var/log/tomcat`) with systemd-managed logrotate and optional JVM GC logging
-- 🔄 **Flexible Downloads**: Support for custom internal repositories (Nexus/Artifactory) or automatic Apache Archive URLs
+- 🔄 **Flexible Installation Sources**: Support for pre-staged local archives (offline/air-gapped), custom internal repositories (Nexus/Artifactory), or automatic Apache Archive URLs
 - ☕ **Upgrade-Safe JAVA_HOME**: Runtime auto-detection via `readlink` — survives OpenJDK package upgrades without re-running Ansible
 - ✅ **Full Parameterization**: Every value configurable through variables — zero hardcoded paths, ports, or credentials
 - 🧹 **Optional Old Version Cleanup**: Automatic removal of outdated CATALINA_HOME directories with configurable retention count (`tomcat_keep_old_versions`) for controlled disk usage after upgrades
@@ -64,7 +64,7 @@ This Ansible role deploys Apache Tomcat using the **Enterprise Split Tomcat** ar
 - **Python**: 3.6 or higher on target hosts (see compatibility note below)
 - **Java**: JDK/JRE 17+ must be pre-installed on target hosts (managed by a separate role)
 - **Privileges**: sudo/root access on target hosts
-- **Network**: Internet access for downloading Tomcat archive (or internal repository)
+- **Network**: Internet access for downloading Tomcat archive, internal repository access, or a pre-staged local archive on the target host (offline/air-gapped)
 - **Collections**:
   - `community.crypto` >= 2.0.0 (for self-signed keystore generation via `openssl_privatekey`, `x509_certificate`, `openssl_pkcs12`)
   - `community.general` >= 6.0.0 (for `sefcontext` SELinux file context management on EL8/EL9)
@@ -246,12 +246,13 @@ tomcat_enable_ajp: false
 
 ### Download
 
-| Variable                     | Description                                                                        | Default  |
-| ---------------------------- | ---------------------------------------------------------------------------------- | -------- |
-| `tomcat_custom_download_url` | Full URL to a custom `.tar.gz` archive (Nexus/Artifactory). Empty = Apache Archive | `""`     |
-| `tomcat_download_checksum`   | Optional checksum for the archive (format: `sha512:HASH`)                          | `""`     |
-| `tomcat_download_timeout`    | Download timeout in seconds                                                        | `60`     |
-| `tomcat_download_tmp_dir`    | Temporary directory for the downloaded archive                                     | `"/tmp"` |
+| Variable                     | Description                                                                                                                               | Default  |
+| ---------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------- | -------- |
+| `tomcat_custom_download_url` | Full URL to a custom `.tar.gz` archive (Nexus/Artifactory). Empty = Apache Archive. Mutually exclusive with `tomcat_local_archive_path`   | `""`     |
+| `tomcat_local_archive_path`  | Absolute path on the target host to a pre-staged `.tar.gz` archive (offline/air-gapped). Skips URL download and preserves the archive     | `""`     |
+| `tomcat_download_checksum`   | Optional checksum for the downloaded archive or `tomcat_local_archive_path` (format: `sha512:HASH`)                                       | `""`     |
+| `tomcat_download_timeout`    | Download timeout in seconds                                                                                                               | `60`     |
+| `tomcat_download_tmp_dir`    | Temporary directory for the downloaded archive                                                                                            | `"/tmp"` |
 
 ### Java
 
@@ -402,7 +403,7 @@ tomcat_enable_ajp: false
 
 | Property         | Value        | Description                                                                                                                                                |
 | ---------------- | ------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Idempotent**   | ✅ Yes       | Running the role multiple times produces the same result. Archive download is skipped if CATALINA_HOME exists. Self-signed keystore uses stat check guard. |
+| **Idempotent**   | ✅ Yes       | Running the role multiple times produces the same result. Archive download or local archive extraction is skipped if CATALINA_HOME exists. Self-signed keystore uses stat check guard. |
 | **Atomic**       | ❌ No        | A failure mid-execution may leave the system in an intermediate state (e.g., binaries extracted but config not templated).                                 |
 | **Check Mode**   | ✅ Supported | All tasks work in check mode. `community.crypto` modules support check mode natively.                                                                      |
 | **Diff Mode**    | ✅ Supported | Template and `community.crypto` tasks support diff mode for change preview.                                                                                |
@@ -720,6 +721,20 @@ Automated via [Release Please](https://github.com/googleapis/release-please). Re
     - role: grzegorzfranus.apache_tomcat
 ```
 
+### Offline / Air-Gapped Installation (Local Archive)
+
+```yaml
+---
+- name: Deploy Tomcat from pre-staged local archive
+  hosts: airgapped_servers
+  vars:
+    tomcat_local_archive_path: "/opt/packages/apache-tomcat-9.0.118.tar.gz"
+    tomcat_download_checksum: "sha512:abc123..."
+
+  roles:
+    - role: grzegorzfranus.apache_tomcat
+```
+
 ## 📁 File Structure
 
 ```
@@ -758,6 +773,11 @@ ansible-role-apache-tomcat/
 │   │   ├── prepare.yml
 │   │   └── verify.yml
 │   ├── cicd/                          # CI/CD deployer test scenario
+│   │   ├── molecule.yml
+│   │   ├── converge.yml
+│   │   ├── prepare.yml
+│   │   └── verify.yml
+│   ├── local-archive/                 # Local archive (offline) test scenario
 │   │   ├── molecule.yml
 │   │   ├── converge.yml
 │   │   ├── prepare.yml

@@ -109,7 +109,14 @@ tomcat_log_dir: "/var/log/tomcat"
 # Leave empty to automatically build URL from archive.apache.org
 tomcat_custom_download_url: ""
 
-# Optional checksum for the downloaded archive (format: "sha512:HASH")
+# Absolute path on target host to a pre-staged .tar.gz archive (offline/air-gapped installs)
+# When set, URL download is skipped and the archive is NOT deleted after extraction
+# Archive must contain top-level directory apache-tomcat-{{ tomcat_version }}
+# Mutually exclusive with tomcat_custom_download_url
+# Valid values: absolute file path string (e.g. "/opt/packages/apache-tomcat-9.0.118.tar.gz") or ""
+tomcat_local_archive_path: ""
+
+# Optional checksum for the downloaded archive or tomcat_local_archive_path (format: "sha512:HASH")
 # Leave empty to skip checksum verification
 tomcat_download_checksum: ""
 

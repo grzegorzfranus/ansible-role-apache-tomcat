@@ -110,8 +110,18 @@ argument_specs:
         type: str
         default: ""
 
+      tomcat_local_archive_path:
+        description: >-
+          Absolute path on the target host to a pre-staged .tar.gz archive (e.g. offline/air-gapped
+          installs). Skips URL download and preserves the archive. Mutually exclusive with
+          tomcat_custom_download_url.
+        type: str
+        default: ""
+
       tomcat_download_checksum:
-        description: "Checksum for the downloaded archive (format: 'sha512:HASH'). Empty = skip."
+        description: >-
+          Checksum for the downloaded archive or tomcat_local_archive_path
+          (format: 'sha512:HASH'). Empty = skip.
         type: str
         default: ""
 

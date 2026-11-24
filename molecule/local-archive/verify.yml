@@ -1,0 +1,85 @@
+---
+# Apache Tomcat Molecule — Verify local-archive scenario results.
+
+- name: Molecule | Verify Role
+  hosts: all
+  gather_facts: true
+  vars:
+    tomcat_version: "9.0.118"
+    tomcat_install_dir: "/opt/tomcat"
+    tomcat_catalina_home: "{{ tomcat_install_dir }}/apache-tomcat-{{ tomcat_version }}"
+    tomcat_local_archive_path: "/opt/packages/apache-tomcat-9.0.118.tar.gz"
+    tomcat_tmp_archive_path: "/tmp/apache-tomcat-{{ tomcat_version }}.tar.gz"
+
+  tasks:
+    - name: Verify | Check CATALINA_HOME exists
+      ansible.builtin.stat:
+        path: "{{ tomcat_catalina_home }}/bin/catalina.sh"
+      register: __verify_catalina_home
+
+    - name: Verify | Assert CATALINA_HOME exists
+      ansible.builtin.assert:
+        that:
+          - __verify_catalina_home.stat.exists
+        fail_msg: "CATALINA_HOME binary not found"
+        success_msg: "CATALINA_HOME verified"
+
+    - name: Verify | Check version symlink
+      ansible.builtin.stat:
+        path: "{{ tomcat_install_dir }}/current"
+      register: __verify_symlink
+
+    - name: Verify | Assert symlink exists and is a link
+      ansible.builtin.assert:
+        that:
+          - __verify_symlink.stat.exists
+          - __verify_symlink.stat.islnk
+        fail_msg: "Version symlink not found or not a symlink"
+        success_msg: "Version symlink verified"
+
+    - name: Verify | Check local archive still exists (not deleted)
+      ansible.builtin.stat:
+        path: "{{ tomcat_local_archive_path }}"
+      register: __verify_local_archive
+
+    - name: Verify | Assert local archive was preserved
+      ansible.builtin.assert:
+        that:
+          - __verify_local_archive.stat.exists
+          - __verify_local_archive.stat.isreg
+        fail_msg: "Local archive {{ tomcat_local_archive_path }} was deleted or is missing"
+        success_msg: "Local archive preserved at {{ tomcat_local_archive_path }}"
+
+    - name: Verify | Check temporary download archive does not exist
+      ansible.builtin.stat:
+        path: "{{ tomcat_tmp_archive_path }}"
+      register: __verify_tmp_archive
+
+    - name: Verify | Assert temporary download archive was not created
+      ansible.builtin.assert:
+        that:
+          - not __verify_tmp_archive.stat.exists
+        fail_msg: "Unexpected temporary archive found at {{ tomcat_tmp_archive_path }}"
+        success_msg: "No temporary archive present at {{ tomcat_tmp_archive_path }}"
+
+    - name: Verify | Check if Tomcat service is active
+      ansible.builtin.command: systemctl is-active tomcat
+      register: __verify_tomcat_active
+      changed_when: false
+      failed_when: false
+
+    - name: Verify | Assert Tomcat service is active
+      ansible.builtin.assert:
+        that:
+          - __verify_tomcat_active.rc == 0
+        fail_msg: "Tomcat service is not active"
+        success_msg: "Tomcat service is active"
+
+    - name: Verify | Wait for Tomcat port 8443 (HTTPS)
+      ansible.builtin.wait_for:
+        port: 8443
+        timeout: 60
+
+    - name: Verify | All checks completed successfully
+      ansible.builtin.debug:
+        msg: "All Apache Tomcat local-archive scenario verification checks passed"

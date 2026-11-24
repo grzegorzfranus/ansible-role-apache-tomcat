@@ -1,0 +1,42 @@
+---
+# Apache Tomcat Molecule — Converge for local-archive scenario.
+
+- name: Molecule | Converge
+  hosts: all
+
+  pre_tasks:
+    - name: Converge | Wait for systemd to complete initialization
+      ansible.builtin.systemd:
+        name: multi-user.target
+        state: started
+      register: systemctl_status
+      until: systemctl_status is succeeded
+      retries: 30
+      delay: 5
+      when:
+        - ansible_facts['service_mgr'] == 'systemd'
+      changed_when: false
+
+    - name: Converge | Stat pre-staged local Tomcat archive
+      ansible.builtin.stat:
+        path: /opt/packages/apache-tomcat-9.0.118.tar.gz
+        get_checksum: true
+        checksum_algorithm: sha512
+      register: __converge_local_archive
+
+  vars:
+    tomcat_local_archive_path: "/opt/packages/apache-tomcat-9.0.118.tar.gz"
+    tomcat_download_checksum: "sha512:{{ __converge_local_archive.stat.checksum }}"
+    tomcat_enable_hardening: true
+    tomcat_enable_cicd: false
+    tomcat_enable_jmx: false
+    tomcat_ssl_generate_self_signed: true
+    tomcat_enable_gc_logging: true
+
+  roles:
+    - role: ../../..
+
+  post_tasks:
+    - name: Converge | Display role execution summary
+      ansible.builtin.debug:
+        msg: "Apache Tomcat local-archive role execution completed"
