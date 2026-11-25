@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.4.0](https://github.com/grzegorzfranus/ansible-role-apache-tomcat/compare/v1.3.0...v1.4.0) (2026-11-25)
+
+
+### Features
+
+* add support for Amazon Linux 2023 ([#67](https://github.com/grzegorzfranus/ansible-role-apache-tomcat/issues/67)) ([c0faf9d](https://github.com/grzegorzfranus/ansible-role-apache-tomcat/commit/c0faf9def5a57c23030cd7508cb084f0590cc57d))
+
 ## [1.3.0](https://github.com/grzegorzfranus/ansible-role-apache-tomcat/compare/v1.2.4...v1.3.0) (2026-11-24)
 
 
