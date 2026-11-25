@@ -15,11 +15,12 @@
         update_cache: true
       changed_when: false
 
-    - name: Prepare | Install packages (Java JDK and Logrotate)
+    - name: Prepare | Install packages (Java JDK, Logrotate, and tar)
       ansible.builtin.dnf:
         name:
-          - java-17-openjdk-headless
+          - "{{ 'java-17-amazon-corretto-headless' if ansible_facts['distribution'] == 'Amazon' else 'java-17-openjdk-headless' }}"
           - logrotate
+          - tar
         state: present
 
     - name: Prepare | Wait for systemd to complete initialization
